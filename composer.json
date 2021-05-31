@@ -1,0 +1,26 @@
+{
+  "name": "codecov/laravel-codecov-opentelemetry",
+  "description": "Laravel middleware for Codecov's OpenTelemetry",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "open-telemetry/opentelemetry": "dev-main"
+  },
+  "autoload": {
+    "psr-4": "Codecov\\LaravelCodecovOpenTelemetry\\": "src/"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Codecov\\LaravelCodecovOpenTelemetry\\LaravelOpenTelemetryServiceProvider"
+      ]
+    }
+  },
+  "scripts": {
+    "format": "phpcbf --standard=psr2 src/"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^4.0",
+    "squizlabs/php_codesniffer": "^3.5"
+  }
+}
