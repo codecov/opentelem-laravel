@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'enable' => true,
+    'enable' => env('CODECOV_CONTRACT_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -55,8 +55,8 @@ return [
     | Execution Environment
     |--------------------------------------------------------------------------
     |
-    | The environment in which the application is running. Defaults to APP_ENV env var.
-    |
+    | The environment in which the application is running. Defaults to APP_ENV env var
+    | if specified. Otherwise null.
     */
     'execution_environment' => env('CODECOV_CONTRACT_ENVIRONMENT', env('APP_ENV', null)),
 
@@ -69,7 +69,7 @@ return [
     | id on every deployment and have it match across test and production envs. E.g., semver or commit SHA.
     |
     */
-    'release_id' => env('CODECOV_CONTRACT_RELEASE', env('COMMIT_SHA', null)),
+    'release_id' => env('CODECOV_CONTRACT_RELEASE_ID', env('COMMIT_SHA', null)),
 
     /*
     |--------------------------------------------------------------------------

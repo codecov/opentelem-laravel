@@ -85,6 +85,10 @@ class Trace
             $span->setAttribute('codecov.environment', config('laravel_codecov_opentelemetry.execution_environment'));
         }
 
+        if (config($configurationKey.'release_id')) {
+            $span->setAttribute('codecov.release_id', config('laravel_codecov_opentelemetry.release_id'));
+        }
+
         if (config($configurationKey.'path')) {
             $span->setAttribute('codecov.request.path', $request->path());
         }
