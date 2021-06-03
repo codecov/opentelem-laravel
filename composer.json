@@ -7,7 +7,9 @@
     "open-telemetry/opentelemetry": "dev-main"
   },
   "autoload": {
-    "psr-4": "Codecov\\LaravelCodecovOpenTelemetry\\": "src"
+    "psr-4": {
+      "Codecov\\LaravelCodecovOpenTelemetry\\": "src"
+    }
   },
   "extra": {
     "laravel": {
