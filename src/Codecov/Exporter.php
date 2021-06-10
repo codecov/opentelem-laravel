@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Codecov\LaravelCodecovOpenTelemetry\Codecov;
 
+use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
-use Http\Adapter\Guzzle7\Client;
 use InvalidArgumentException;
 use OpenTelemetry\Sdk\Trace;
 use OpenTelemetry\Trace as API;
