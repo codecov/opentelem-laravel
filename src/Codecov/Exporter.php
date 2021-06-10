@@ -67,7 +67,7 @@ class Exporter implements Trace\Exporter
         }
 
         $this->endpointUrl = $endpointUrl;
-        $this->client = $client ?? $this->createDefaultClient();
+        $this->client = $client ?? new Client(['timeout' => 30]);
         $this->spanConverter = $spanConverter ?? new SpanConverter($name);
         $this->authToken = $authToken;
     }
@@ -122,12 +122,5 @@ class Exporter implements Trace\Exporter
     public function shutdown(): void
     {
         $this->running = false;
-    }
-
-    protected function createDefaultClient(): ClientInterface
-    {
-        return Client::createWithConfig([
-            'timeout' => 30,
-        ]);
     }
 }
