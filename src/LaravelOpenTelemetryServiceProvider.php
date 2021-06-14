@@ -34,9 +34,13 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(Tracer::class, function () {
-            return $this->initOpenTelemetry();
-        });
+        $instance = $this->initOpenTelemetry();
+
+        if ($instance) {
+            $this->app->singleton(Tracer::class, function () use ($instance) {
+                return $instance;
+            });
+        }
     }
 
     /**
@@ -45,7 +49,7 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
      *
      * @return null|Tracer a configured Tracer, or null if tracing hasn't been enabled
      */
-    private function initOpenTelemetry(): Tracer
+    private function initOpenTelemetry(): ?Tracer
     {
         if (!config('laravel_codecov_opentelemetry.enable')) {
             return null;
