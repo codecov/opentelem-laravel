@@ -18,7 +18,7 @@ class Trace
      */
     private $tracer;
 
-    public function __construct(Tracer $tracer)
+    public function __construct(Tracer $tracer = null)
     {
         $this->tracer = $tracer;
     }
@@ -32,6 +32,10 @@ class Trace
      */
     public function handle($request, Closure $next)
     {
+        if (!$this->tracer) {
+            return $next($request);
+        }
+
         $span = $this->tracer->startAndActivateSpan('http_'.strtolower($request->method()));
         $response = $next($request);
 
