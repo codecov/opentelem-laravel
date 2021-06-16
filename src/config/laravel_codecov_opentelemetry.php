@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'enable' => env('CODECOV_CONTRACT_ENABLED', false),
+    'enable' => env('CODECOV_CONTRACT_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
