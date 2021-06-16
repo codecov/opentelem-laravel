@@ -60,10 +60,9 @@ class Exporter implements Trace\Exporter
         if (
             !isset($parsedDsn['scheme'])
             || !isset($parsedDsn['host'])
-            || !isset($parsedDsn['port'])
             || !isset($parsedDsn['path'])
         ) {
-            throw new InvalidArgumentException('Endpoint should have scheme, host, port and path');
+            throw new InvalidArgumentException('Endpoint should have scheme, host, and path');
         }
 
         $this->endpointUrl = $endpointUrl;
