@@ -69,7 +69,7 @@ return [
     | id on every deployment and have it match across test and production envs. E.g., semver or commit SHA.
     |
     */
-    'release_id' => env('CODECOV_CONTRACT_RELEASE_ID', env('COMMIT_SHA', null)),
+    'release_id' => env('CODECOV_CONTRACT_RELEASE_ID', env('COMMIT_SHA', '0.0.0')),
 
     /*
     |--------------------------------------------------------------------------
