@@ -43,7 +43,7 @@ The following settings are available:
 | release_id     | true    | A unique id for the release being measured, e.g. semver or commit SHA. |
 | line_execution | false   | Report lines executed. Requires pcov extension.                        |
 
-### Optional: Line Execution
+## Optional: Line Execution
 
 It's possible to collect and report line coverage using this package. However, to do so, the [pcov](https://github.com/krakjoe/pcov) extension must be loaded into your php installation. 
 
@@ -86,7 +86,7 @@ Once the pcov extension is properly installed, it can be used by setting:
 
 in this package's published config file (`config/laravel-codecov-opentelemetry.php`).
 
-#### Line Execution Performance Implications
+### Line Execution Performance Implications
 
 Using line execution in a production system does incur a performance penalty. However, given the lightweight and performant nature of `pcov`, this penalty may be fairly negligible depending on your use case. 
 
