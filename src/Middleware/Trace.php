@@ -36,6 +36,10 @@ class Trace
             return $next($request);
         }
 
+        if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov')) {
+            \pcov\start();
+        }
+
         $span = $this->tracer->startAndActivateSpan('http_'.strtolower($request->method()));
         $response = $next($request);
 
@@ -43,8 +47,13 @@ class Trace
         $this->addConfiguredTags($span, $request, $response);
         $span->setAttribute('codecov.response.status', $response->status());
 
-        $this->tracer->endActiveSpan();
+        if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov')) {
+            \pcov\stop();
+            $coverage = \pcov\collect();
+            $span->setAttribute('codecov.lines_executed', $coverage);
+        }
 
+        //$this->tracer->endActiveSpan();
         return $response;
     }
 

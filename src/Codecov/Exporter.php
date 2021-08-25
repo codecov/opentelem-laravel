@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Codecov\LaravelCodecovOpenTelemetry\Codecov;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 use OpenTelemetry\Sdk\Trace;
@@ -13,6 +14,8 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Client\RequestExceptionInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 /**
  * Class CodecovExporter - implements the export interface for data transfer to Codecov.
@@ -38,6 +41,8 @@ class Exporter implements Trace\Exporter
      * @var ClientInterface
      */
     private $client;
+    private $requestFactory;
+    private $streamFactory;
 
     /**
      * @var string
@@ -48,8 +53,10 @@ class Exporter implements Trace\Exporter
         $name,
         string $endpointUrl,
         string $authToken,
+        ClientInterface $client = null,
+        RequestFactoryInterface $requestFactory = null,
+        StreamFactoryInterface $streamFactory = null,
         SpanConverter $spanConverter = null,
-        ClientInterface $client = null
     ) {
         $parsedDsn = parse_url($endpointUrl);
 
@@ -67,6 +74,10 @@ class Exporter implements Trace\Exporter
 
         $this->endpointUrl = $endpointUrl;
         $this->client = $client ?? new Client(['timeout' => 30]);
+
+        $this->requestFactory = $requestFactory ? $requestFactory : new HttpFactory();
+        $this->streamFactory = $streamFactory ? $streamFactory : new HttpFactory();
+
         $this->spanConverter = $spanConverter ?? new SpanConverter($name);
         $this->authToken = $authToken;
     }
@@ -121,5 +132,19 @@ class Exporter implements Trace\Exporter
     public function shutdown(): void
     {
         $this->running = false;
+    }
+
+    public static function fromConnectionString(string $endpointUrl, string $name, string $authToken, $args = null)
+    {
+        $factory = new HttpFactory();
+
+        return new Exporter(
+            $name,
+            $endpointUrl,
+            $authToken,
+            new Client(),
+            $factory,
+            $factory
+        );
     }
 }

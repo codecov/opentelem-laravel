@@ -83,16 +83,17 @@ return [
     */
 
     'tags' => [
-        'ip' => true, // Requester's IP address
+        'ip' => false, // Requester's IP address
         'path' => true, // Path requested
         'url' => true, // Full URL requested
         'method' => true, // HTTP method of the request
-        'secure' => true, // Whether the request has been secured with SSL/TLS
-        'ua' => true, // Requester's user agent
-        'user' => true, // Authenticated username
+        'secure' => false, // Whether the request has been secured with SSL/TLS
+        'ua' => false, // Requester's user agent
+        'user' => false, // Authenticated username
         'action' => true, //Controller action for request if available
         'server' => false, //Request server if available.
         'environment' => true, //The execution environment.
         'release_id' => true, //A unique id for the release being measured, e.g. semver or commit SHA.
+        'line_execution' => false, //Report lines executed. Requires pcov extension.
     ],
 ];
