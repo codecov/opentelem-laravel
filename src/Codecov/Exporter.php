@@ -98,6 +98,7 @@ class Exporter implements Trace\Exporter
             return Trace\Exporter::SUCCESS;
         }
 
+        //TODO adapt for tracked and untracked spans.
         $convertedSpans = [];
         foreach ($spans as $span) {
             array_push($convertedSpans, $this->spanConverter->convert($span));
@@ -140,12 +141,6 @@ class Exporter implements Trace\Exporter
     public function getPresignedPut()
     {
         try {
-            $headers = [
-                'content-type' => 'application/json',
-                'Authorization' => 'repotoken '.$this->authToken,
-                'Accept' => 'application/json',
-            ];
-
             $payload = [
                 'profiling' => 'test_data',
             ];

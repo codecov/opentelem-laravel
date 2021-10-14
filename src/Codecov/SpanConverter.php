@@ -65,9 +65,6 @@ class SpanConverter
             $row['codecov'] = $coverage;
         }
 
-        //dump the row
-        dd(json_encode($row));
-
         // opentelemetry php's getlinks method isn't implemented yet.
         // this throws an exception, for now links will just be an empty array
         // foreach ($span->getLinks() as $k => $v) {

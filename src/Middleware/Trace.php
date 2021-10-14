@@ -17,10 +17,15 @@ class Trace
      * @var Tracer OpenTelemetry Tracer
      */
     private $tracer;
+    private $sampleRate;
 
     public function __construct(Tracer $tracer = null)
     {
         $this->tracer = $tracer;
+        //For dev
+        $this->sampleRate = 50;
+        //for prod
+        //$this->sampleRate = config('laravel_codecov_opentelemetry.sample_rate');
     }
 
     /**
@@ -32,20 +37,19 @@ class Trace
      */
     public function handle($request, Closure $next)
     {
-        \Log::info('starting trace');
+        //don't trace if there's no tracer
         if (!$this->tracer) {
-            \Log::info('no tracer found');
-
             return $next($request);
         }
 
-        // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov')) {
-        //     \Log::info('found pcov');
+        $shouldSample = $this->sampleRate > rand(0, 100) ? true : false;
+
+        // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov') && $shouldSample) {
         //     \pcov\start();
         // }
 
         //For Dev
-        if (extension_loaded('pcov')) {
+        if (extension_loaded('pcov') && $shouldSample) {
             \Log::info('found pcov');
             \pcov\start();
         }
@@ -57,7 +61,7 @@ class Trace
         $this->addConfiguredTags($span, $request, $response);
         $span->setAttribute('codecov.response.status', $response->status());
 
-        // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov')) {
+        // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov') && $shouldSample ) {
         //     \pcov\stop();
         //
         //     $span->setAttribute('codecov.type', 'bytes');
@@ -65,14 +69,12 @@ class Trace
         // }
 
         //FOR DEV
-        if (extension_loaded('pcov')) {
+        if (extension_loaded('pcov') && $shouldSample) {
             \pcov\stop();
             $coverage = \pcov\collect();
             $span->setAttribute('codecov.type', 'bytes');
             $span->setAttribute('codecov.coverage', base64_encode(json_encode($coverage)));
         }
-
-        \Log::info('stopping trace');
 
         $this->tracer->endActiveSpan();
 

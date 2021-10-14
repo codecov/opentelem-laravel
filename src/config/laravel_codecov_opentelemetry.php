@@ -73,6 +73,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Release Id
+    |--------------------------------------------------------------------------
+    |
+    | A unique id associated with the project being instrumented. It is recommended to change this
+    | id on every deployment and have it match across test and production envs. E.g., semver or commit SHA.
+    |
+    */
+    'sample_rate' => env('CODECOV_CONTRACT_SAMPLE_RATE', 10),
+
+    /*
+    |--------------------------------------------------------------------------
     | Tagging
     |--------------------------------------------------------------------------
     |
