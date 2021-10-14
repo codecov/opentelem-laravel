@@ -51,14 +51,27 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
      */
     private function initOpenTelemetry(): ?Tracer
     {
-        if (!config('laravel_codecov_opentelemetry.enable')) {
-            return null;
-        }
+        \Log::info('init OTEL.');
+
+        // if (!config('laravel_codecov_opentelemetry.enable')) {
+        //     \Log::info(config('laravel_codecov_opentelemetry.enable'));
+        //     \Log::info('OTEL not enabled.');
+
+        //     return null;
+        // }
+
+        // $exporter = new CodecovExporter(
+        //     config('laravel_codecov_opentelemetry.service_name'),
+        //     config('laravel_codecov_opentelemetry.codecov_endpoint'),
+        //     config('laravel_codecov_opentelemetry.codecov_token')
+        // );
+
+        //hardcoding some stuff for development purposes.
 
         $exporter = new CodecovExporter(
-            config('laravel_codecov_opentelemetry.service_name'),
-            config('laravel_codecov_opentelemetry.codecov_endpoint'),
-            config('laravel_codecov_opentelemetry.codecov_token')
+            'licenseapp-contract-coverage',
+            'http://api:8000/profiling/uploads',
+            '55e1acd416a7528d54c2b791ab04eee3051cf4f7'
         );
 
         $provider = new TracerProvider();

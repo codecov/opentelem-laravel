@@ -24,6 +24,8 @@ class SpanConverter
     {
         $spanParent = $span->getParent();
         $duration = ($span->getEnd() - $span->getStart()) / 1e3;
+
+        //build the codecov object from the stored attributes.
         $row = [
             'name' => $span->getSpanName(),
             'context' => [
@@ -44,9 +46,27 @@ class SpanConverter
             'events' => [],
         ];
 
+        $coverage = [];
+
         foreach ($span->getAttributes() as $k => $v) {
-            $row['attributes'][$k] = $this->sanitizeTagValue($v->getValue());
+            $v = $this->sanitizeTagValue($v->getValue());
+
+            if ('codecov.type' == $k) {
+                $coverage['type'] = $v;
+            } elseif ('codecov.coverage' == $k) {
+                $coverage['coverage'] = $v;
+            } else {
+                //push to general attributes
+                $row['attributes'][$k] = $v;
+            }
         }
+
+        if ($coverage) {
+            $row['codecov'] = $coverage;
+        }
+
+        //dump the row
+        dd(json_encode($row));
 
         // opentelemetry php's getlinks method isn't implemented yet.
         // this throws an exception, for now links will just be an empty array

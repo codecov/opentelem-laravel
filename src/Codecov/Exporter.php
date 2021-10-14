@@ -6,7 +6,6 @@ namespace Codecov\LaravelCodecovOpenTelemetry\Codecov;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
-use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 use OpenTelemetry\Sdk\Trace;
 use OpenTelemetry\Trace as API;
@@ -105,13 +104,22 @@ class Exporter implements Trace\Exporter
         }
 
         try {
+            $presignedURL = $this->getPresignedPut();
+
+            \Log::info('presigned URL: '.$presignedURL);
+
             $json = json_encode($convertedSpans);
-            $headers = [
-                'content-type' => 'application/json',
-                'Authorization' => $this->authToken,
-            ];
-            $request = new Request('POST', $this->endpointUrl, $headers, $json);
-            $response = $this->client->sendRequest($request);
+
+            $response = $this->client->request(
+                'PUT',
+                $presignedURL,
+                [
+                    'headers' => ['content-type' => 'application/txt'],
+                    'body' => json_encode([
+                        'spans' => $json,
+                    ]),
+                ]
+            );
         } catch (RequestExceptionInterface $e) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
@@ -127,6 +135,44 @@ class Exporter implements Trace\Exporter
         }
 
         return Trace\Exporter::SUCCESS;
+    }
+
+    public function getPresignedPut()
+    {
+        try {
+            $headers = [
+                'content-type' => 'application/json',
+                'Authorization' => 'repotoken '.$this->authToken,
+                'Accept' => 'application/json',
+            ];
+
+            $payload = [
+                'profiling' => 'test_data',
+            ];
+
+            $response = $this->client->request(
+                'POST',
+                $this->endpointUrl,
+                [
+                    'headers' => [
+                        'content-type' => 'application/json',
+                        'Authorization' => 'repotoken '.$this->authToken,
+                        'Accept' => 'application/json',
+                    ],
+                    'body' => json_encode($payload),
+                ]
+            );
+
+            $response = json_decode((string) $response->getBody());
+
+            return $response->raw_upload_location;
+        } catch (RequestExceptionInterface $e) {
+            // TODO: Better exception errors
+            return Trace\Exporter::FAILED_NOT_RETRYABLE;
+        } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
+            // TODO: Better exception errors
+            return Trace\Exporter::FAILED_RETRYABLE;
+        }
     }
 
     public function shutdown(): void

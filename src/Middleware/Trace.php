@@ -32,11 +32,21 @@ class Trace
      */
     public function handle($request, Closure $next)
     {
+        \Log::info('starting trace');
         if (!$this->tracer) {
+            \Log::info('no tracer found');
+
             return $next($request);
         }
 
-        if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov')) {
+        // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov')) {
+        //     \Log::info('found pcov');
+        //     \pcov\start();
+        // }
+
+        //For Dev
+        if (extension_loaded('pcov')) {
+            \Log::info('found pcov');
             \pcov\start();
         }
 
@@ -47,13 +57,25 @@ class Trace
         $this->addConfiguredTags($span, $request, $response);
         $span->setAttribute('codecov.response.status', $response->status());
 
-        if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov')) {
+        // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov')) {
+        //     \pcov\stop();
+        //
+        //     $span->setAttribute('codecov.type', 'bytes');
+        //      $span->setAttribute('codecov.coverage', base64_encode($coverage));
+        // }
+
+        //FOR DEV
+        if (extension_loaded('pcov')) {
             \pcov\stop();
             $coverage = \pcov\collect();
-            $span->setAttribute('codecov.lines_executed', $coverage);
+            $span->setAttribute('codecov.type', 'bytes');
+            $span->setAttribute('codecov.coverage', base64_encode(json_encode($coverage)));
         }
 
-        //$this->tracer->endActiveSpan();
+        \Log::info('stopping trace');
+
+        $this->tracer->endActiveSpan();
+
         return $response;
     }
 
