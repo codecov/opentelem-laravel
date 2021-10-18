@@ -81,6 +81,8 @@ class SpanConverter
             ];
         }
 
+        dd($row);
+
         return $row;
     }
 

@@ -59,7 +59,6 @@ class Trace
 
         $this->setSpanStatus($span, $response->status());
         $this->addConfiguredTags($span, $request, $response);
-        $span->setAttribute('codecov.response.status', $response->status());
 
         // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov') && $shouldSample ) {
         //     \pcov\stop();
@@ -116,50 +115,16 @@ class Trace
 
     private function addConfiguredTags(Span $span, Request $request, $response)
     {
-        $configurationKey = 'laravel_codecov_opentelemetry.tags.';
-
-        if (config($configurationKey.'environment')) {
-            $span->setAttribute('codecov.environment', config('laravel_codecov_opentelemetry.execution_environment'));
-        }
-
-        if (config($configurationKey.'release_id')) {
-            $span->setAttribute('codecov.release_id', config('laravel_codecov_opentelemetry.release_id'));
-        }
-
-        if (config($configurationKey.'path')) {
-            $span->setAttribute('codecov.request.path', $request->path());
-        }
-
-        if (config($configurationKey.'url')) {
-            $span->setAttribute('codecov.request.url', $request->fullUrl());
-        }
-
-        if (config($configurationKey.'method')) {
-            $span->setAttribute('codecov.request.method', $request->method());
-        }
-
-        if (config($configurationKey.'secure')) {
-            $span->setAttribute('codecov.request.secure', $request->secure());
-        }
-
-        if (config($configurationKey.'ip')) {
-            $span->setAttribute('codecov.request.ip', $request->ip());
-        }
-
-        if (config($configurationKey.'ua')) {
-            $span->setAttribute('codecov.request.ua', $request->userAgent());
-        }
-
-        if (config($configurationKey.'user') && $request->user()) {
-            $span->setAttribute('codecov.request.user', $request->user()->email);
-        }
-
-        if (config($configurationKey.'action') && $request->route()) {
-            $span->setAttribute('codecov.request.action', $request->route()->getActionName());
-        }
-
-        if (config($configurationKey.'sever') && $request->server()) {
-            $span->setAttribute('codecov.request.server', $request->server());
-        }
+        $span->setAttribute('http.status_code', $response->status());
+        $span->setAttribute('http.method', $request->method());
+        $span->setAttribute('http.host', $request->root());
+        $span->setAttribute('http.target', '/'.$request->path());
+        $span->setAttribute('http.scheme', $request->secure() ? 'https' : 'http');
+        $span->setAttribute('http.flavor', $_SERVER['SERVER_PROTOCOL']);
+        $span->setAttribute('http.server_name', $request->server('SERVER_ADDR'));
+        $span->setAttribute('http.user_agent', $request->userAgent());
+        $span->setAttribute('net.host.port', $request->server('SERVER_PORT'));
+        $span->setAttribute('net.peer.ip', $request->ip());
+        $span->setAttribute('net.peer.port', $_SERVER['REMOTE_PORT']);
     }
 }
