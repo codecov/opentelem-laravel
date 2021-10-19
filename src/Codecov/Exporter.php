@@ -117,6 +117,10 @@ class Exporter implements Trace\Exporter
         }
 
         try {
+            // Only set a profiler version if an identifier has been provided.
+            // This will prevent a redundant api call if it isn't needed.
+            // It is expected version support will change as the codecov api changes
+            // to accommodate the stateless approach required by this package.
             $version = $this->setProfilerVersion();
             $presignedURL = $this->getPresignedPut($version);
             $json = json_encode($convertedSpans);
@@ -154,6 +158,11 @@ class Exporter implements Trace\Exporter
     {
         try {
             $version = config('laravel_codecov_opentelemetry.profiling_id');
+
+            if (!$version) {
+                return null;
+            }
+
             $env = config('laravel_codecov_opentelemetry.execution_environment');
 
             $payload = [

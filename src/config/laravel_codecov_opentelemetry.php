@@ -69,7 +69,7 @@ return [
     | id on every deployment and have it match across test and production envs. E.g., semver or commit SHA.
     |
     */
-    'profiling_id' => env('CODECOV_OTEL_PROFILING_ID', env('COMMIT_SHA', '0.0.0')),
+    'profiling_id' => env('CODECOV_OTEL_PROFILING_ID', env('COMMIT_SHA', null)),
 
     /*
     |--------------------------------------------------------------------------
