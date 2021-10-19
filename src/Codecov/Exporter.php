@@ -135,8 +135,6 @@ class Exporter implements Trace\Exporter
                     ]),
                 ]
             );
-
-            dd($json);
         } catch (RequestExceptionInterface $e) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
