@@ -17,15 +17,22 @@ class Trace
      * @var Tracer OpenTelemetry Tracer
      */
     private $tracer;
-    private $sampleRate;
+
+    /**
+     * @var int
+     */
+    private $trackedSampleRate;
+
+    /**
+     * @var int
+     */
+    private $untrackedSampleRate;
 
     public function __construct(Tracer $tracer = null)
     {
         $this->tracer = $tracer;
-        //For dev
-        $this->sampleRate = 50;
-        //for prod
-        //$this->sampleRate = config('laravel_codecov_opentelemetry.sample_rate');
+        $this->trackedSampleRate = config('laravel_codecov_opentelemetry.tracked_spans_sample_rate');
+        $this->untrackedSampleRate = config('laravel_codecov_opentelemetry.untracked_spans_sample_rate');
     }
 
     /**
@@ -37,43 +44,36 @@ class Trace
      */
     public function handle($request, Closure $next)
     {
-        //don't trace if there's no tracer
-        if (!$this->tracer) {
+        $shouldSampleTracked = $this->trackedSampleRate > rand(0, 100) ? true : false;
+        $shouldSampleUntracked = $this->untrackedSampleRate > rand(0, 100) ? true : false;
+
+        if (!$this->tracer || (!$shouldSampleTracked && !$shouldSampleUntracked)) {
             return $next($request);
         }
 
-        $shouldSample = $this->sampleRate > rand(0, 100) ? true : false;
+        $span = $this->tracer->startAndActivateSpan('http_'.strtolower($request->method()));
 
-        // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov') && $shouldSample) {
-        //     \pcov\start();
-        // }
-
-        //For Dev
-        if (extension_loaded('pcov') && $shouldSample) {
-            \Log::info('found pcov');
+        if (extension_loaded('pcov') && $shouldSampleTracked) {
             \pcov\start();
         }
 
-        $span = $this->tracer->startAndActivateSpan('http_'.strtolower($request->method()));
         $response = $next($request);
 
-        $this->setSpanStatus($span, $response->status());
-        $this->addConfiguredTags($span, $request, $response);
-
-        // if (config('laravel_codecov_opentelemetry.tags.line_execution') && extension_loaded('pcov') && $shouldSample ) {
-        //     \pcov\stop();
-        //
-        //     $span->setAttribute('codecov.type', 'bytes');
-        //      $span->setAttribute('codecov.coverage', base64_encode($coverage));
-        // }
-
-        //FOR DEV
-        if (extension_loaded('pcov') && $shouldSample) {
+        if (extension_loaded('pcov') && $shouldSampleTracked) {
             \pcov\stop();
             $coverage = \pcov\collect();
             $span->setAttribute('codecov.type', 'bytes');
-            $span->setAttribute('codecov.coverage', base64_encode(json_encode($coverage)));
+
+            $coverageReport = [
+                'coverage_output_type' => 'pcov',
+                'pcov_coverage' => $coverage,
+            ];
+
+            $span->setAttribute('codecov.coverage', base64_encode(json_encode($coverageReport)));
         }
+
+        $this->setSpanStatus($span, $response->status());
+        $this->addConfiguredTags($span, $request, $response);
 
         $this->tracer->endActiveSpan();
 

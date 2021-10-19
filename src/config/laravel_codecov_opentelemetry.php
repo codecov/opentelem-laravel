@@ -29,15 +29,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Codecov Endpoint
+    | Codecov Host
     |--------------------------------------------------------------------------
     |
-    | This value is the URL of your Codecov endpoint. Make sure you include the
-    | protocol and port number.
+    | This value is the URL of your Codecov host. Make sure you include the
+    | protocol and (if needed) port number. e.g., https://my-codecov-host:4100
     |
     */
 
-    'codecov_endpoint' => env('CODECOV_OTEL_ENDPOINT', 'http://localhost'),
+    'codecov_host' => env('CODECOV_OTEL_HOST', 'http://localhost'),
 
     /*
     |--------------------------------------------------------------------------
@@ -48,7 +48,7 @@ return [
     |
     */
 
-    'codecov_token' => env('CODECOV_OTEL_TOKEN', null),
+    'profiling_token' => env('CODECOV_OTEL_PROFILING_TOKEN', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -78,6 +78,10 @@ return [
     |
     | The rate to sample spans with line execution information. For performance reasons, it is not recommended
     | to track every span. The default value ensures one out of ten spans will be tracked on average.
+    | Minimum Value: 0 -- no tracked spans, Maximum Value: 100 -- all spans tracked.
+    |
+    | A value of 0 will effectively disable tracked span creation completely. Useful if you are not interested in
+    | any features that require line execution information.
     |
     */
     'tracked_spans_sample_rate' => env('CODECOV_OTEL_TRACKED_SPANS_SAMPLE_RATE', 10),
@@ -91,6 +95,7 @@ return [
     | to track every span. The default value ensures one out of five spans will be tracked on average.
     |
     | Generally untracked spans will be much more efficient to track.
+    | Minimum Value: 0 -- no tracked spans, Maximum Value: 100 -- all untracked spans.
     |
     */
     'untracked_spans_sample_rate' => env('CODECOV_OTEL_UNTRACKED_SPANS_SAMPLE_RATE', 10),

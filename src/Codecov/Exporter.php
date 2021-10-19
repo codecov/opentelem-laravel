@@ -24,7 +24,12 @@ class Exporter implements Trace\Exporter
     /**
      * @var string
      */
-    private $endpointUrl;
+    private $uploadsUrl;
+
+    /**
+     * @var string
+     */
+    private $versionsUrl;
 
     /**
      * @var SpanConverter
@@ -40,7 +45,15 @@ class Exporter implements Trace\Exporter
      * @var ClientInterface
      */
     private $client;
+
+    /**
+     * @var HttpFactory
+     */
     private $requestFactory;
+
+    /**
+     * @var HttpFactory
+     */
     private $streamFactory;
 
     /**
@@ -50,14 +63,14 @@ class Exporter implements Trace\Exporter
 
     public function __construct(
         $name,
-        string $endpointUrl,
+        string $host,
         string $authToken,
         ClientInterface $client = null,
         RequestFactoryInterface $requestFactory = null,
         StreamFactoryInterface $streamFactory = null,
         SpanConverter $spanConverter = null,
     ) {
-        $parsedDsn = parse_url($endpointUrl);
+        $parsedDsn = parse_url($host);
 
         if (!is_array($parsedDsn)) {
             throw new InvalidArgumentException('Unable to parse provided DSN');
@@ -66,12 +79,12 @@ class Exporter implements Trace\Exporter
         if (
             !isset($parsedDsn['scheme'])
             || !isset($parsedDsn['host'])
-            || !isset($parsedDsn['path'])
         ) {
-            throw new InvalidArgumentException('Endpoint should have scheme, host, and path');
+            throw new InvalidArgumentException('Endpoint should have scheme and host');
         }
 
-        $this->endpointUrl = $endpointUrl;
+        $this->uploadsUrl = $host.'/profiling/uploads';
+        $this->versionsUrl = $host.'/profiling/versions';
         $this->client = $client ?? new Client(['timeout' => 30]);
 
         $this->requestFactory = $requestFactory ? $requestFactory : new HttpFactory();
@@ -98,17 +111,14 @@ class Exporter implements Trace\Exporter
             return Trace\Exporter::SUCCESS;
         }
 
-        //TODO adapt for tracked and untracked spans.
         $convertedSpans = [];
         foreach ($spans as $span) {
             array_push($convertedSpans, $this->spanConverter->convert($span));
         }
 
         try {
-            $presignedURL = $this->getPresignedPut();
-
-            \Log::info('presigned URL: '.$presignedURL);
-
+            $version = $this->setProfilerVersion();
+            $presignedURL = $this->getPresignedPut($version);
             $json = json_encode($convertedSpans);
 
             $response = $this->client->request(
@@ -121,6 +131,8 @@ class Exporter implements Trace\Exporter
                     ]),
                 ]
             );
+
+            dd($json);
         } catch (RequestExceptionInterface $e) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
@@ -138,16 +150,56 @@ class Exporter implements Trace\Exporter
         return Trace\Exporter::SUCCESS;
     }
 
-    public function getPresignedPut()
+    public function setProfilerVersion()
     {
         try {
+            $version = config('laravel_codecov_opentelemetry.profiling_id');
+            $env = config('laravel_codecov_opentelemetry.execution_environment');
+
             $payload = [
-                'profiling' => 'test_data',
+                'version_identifier' => $version,
+                'environment' => $env,
             ];
 
             $response = $this->client->request(
                 'POST',
-                $this->endpointUrl,
+                $this->versionsUrl,
+                [
+                    'headers' => [
+                        'content-type' => 'application/json',
+                        'Authorization' => 'repotoken '.$this->authToken,
+                        'Accept' => 'application/json',
+                    ],
+                    'body' => json_encode($payload),
+                ]
+            );
+
+            $response = json_decode((string) $response->getBody());
+
+            return $response->external_id;
+        } catch (RequestExceptionInterface $e) {
+            return Trace\Exporter::FAILED_NOT_RETRYABLE;
+        } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
+            return Trace\Exporter::FAILED_RETRYABLE;
+        }
+    }
+
+    public function getPresignedPut(?string $externalId = null)
+    {
+        try {
+            if ($externalId) {
+                $payload = [
+                    'profiling' => $externalId,
+                ];
+            } else {
+                $payload = [
+                    'profiling' => 'default',
+                ];
+            }
+
+            $response = $this->client->request(
+                'POST',
+                $this->uploadsUrl,
                 [
                     'headers' => [
                         'content-type' => 'application/json',
@@ -162,10 +214,8 @@ class Exporter implements Trace\Exporter
 
             return $response->raw_upload_location;
         } catch (RequestExceptionInterface $e) {
-            // TODO: Better exception errors
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
-            // TODO: Better exception errors
             return Trace\Exporter::FAILED_RETRYABLE;
         }
     }

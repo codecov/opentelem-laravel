@@ -22,11 +22,6 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/config/laravel_codecov_opentelemetry.php' => config_path('laravel_codecov_opentelemetry.php'),
         ]);
-
-        $this->mergeConfigFrom(
-            __DIR__.'/config/laravel_codecov_opentelemetry.php',
-            'laravel_codecov_opentelemetry'
-        );
     }
 
     /**
@@ -34,6 +29,11 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(
+            __DIR__.'/config/laravel_codecov_opentelemetry.php',
+            'laravel_codecov_opentelemetry'
+        );
+
         $instance = $this->initOpenTelemetry();
 
         if ($instance) {
@@ -51,27 +51,14 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
      */
     private function initOpenTelemetry(): ?Tracer
     {
-        \Log::info('init OTEL.');
-
-        // if (!config('laravel_codecov_opentelemetry.enable')) {
-        //     \Log::info(config('laravel_codecov_opentelemetry.enable'));
-        //     \Log::info('OTEL not enabled.');
-
-        //     return null;
-        // }
-
-        // $exporter = new CodecovExporter(
-        //     config('laravel_codecov_opentelemetry.service_name'),
-        //     config('laravel_codecov_opentelemetry.codecov_endpoint'),
-        //     config('laravel_codecov_opentelemetry.codecov_token')
-        // );
-
-        //hardcoding some stuff for development purposes.
+        if (!config('laravel_codecov_opentelemetry.enable')) {
+            return null;
+        }
 
         $exporter = new CodecovExporter(
-            'licenseapp-contract-coverage',
-            'http://api:8000/profiling/uploads',
-            '55e1acd416a7528d54c2b791ab04eee3051cf4f7'
+            config('laravel_codecov_opentelemetry.service_name'),
+            config('laravel_codecov_opentelemetry.codecov_host'),
+            config('laravel_codecov_opentelemetry.profiling_token')
         );
 
         $provider = new TracerProvider();

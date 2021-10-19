@@ -25,7 +25,6 @@ class SpanConverter
         $spanParent = $span->getParent();
         $duration = ($span->getEnd() - $span->getStart()) / 1e3;
 
-        //build the codecov object from the stored attributes.
         $row = [
             'name' => $span->getSpanName(),
             'context' => [
@@ -52,11 +51,13 @@ class SpanConverter
             $v = $this->sanitizeTagValue($v->getValue());
 
             if ('codecov.type' == $k) {
+                // Push to codecov specific section of span
                 $coverage['type'] = $v;
             } elseif ('codecov.coverage' == $k) {
+                // Push to codecov specific section of span
                 $coverage['coverage'] = $v;
             } else {
-                //push to general attributes
+                // Push to general attributes
                 $row['attributes'][$k] = $v;
             }
         }
@@ -81,14 +82,11 @@ class SpanConverter
             ];
         }
 
-        dd($row);
-
         return $row;
     }
 
     private function sanitizeTagValue($value)
     {
-        // Casting false to string makes an empty string
         if (is_bool($value)) {
             return $value ? 'true' : 'false';
         }
