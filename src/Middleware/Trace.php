@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use OpenTelemetry\Trace\Span;
 use OpenTelemetry\Trace\SpanStatus;
 use OpenTelemetry\Trace\Tracer;
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
+use SebastianBergmann\CodeCoverage\Filter;
 
 /**
  * Trace an incoming HTTP request.
@@ -53,23 +56,27 @@ class Trace
 
         $span = $this->tracer->startAndActivateSpan('http_'.strtolower($request->method()));
 
+        $coverage = null;
+
         if (extension_loaded('pcov') && $shouldSampleTracked) {
-            \pcov\start();
+            $filter = new Filter();
+            $filter->includeDirectory(app_path());
+
+            $coverage = new CodeCoverage(
+                new PcovDriver($filter),
+                $filter
+            );
+
+            $coverage->start($request->route()->getName());
         }
 
         $response = $next($request);
 
-        if (extension_loaded('pcov') && $shouldSampleTracked) {
-            \pcov\stop();
-            $coverage = \pcov\collect();
+        if ($coverage) {
+            $coverage->stop();
+
             $span->setAttribute('codecov.type', 'bytes');
-
-            $coverageReport = [
-                'coverage_output_type' => 'pcov',
-                'pcov_coverage' => $coverage,
-            ];
-
-            $span->setAttribute('codecov.coverage', base64_encode(json_encode($coverageReport)));
+            $span->setAttribute('codecov.coverage', $coverage);
         }
 
         $this->setSpanStatus($span, $response->status());
