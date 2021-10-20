@@ -123,7 +123,6 @@ class Exporter implements Trace\Exporter
             // to accommodate the stateless approach required by this package.
             $version = $this->setProfilerVersion();
             $presignedURL = $this->getPresignedPut($version);
-            $json = json_encode($convertedSpans);
 
             $response = $this->client->request(
                 'PUT',
@@ -131,7 +130,7 @@ class Exporter implements Trace\Exporter
                 [
                     'headers' => ['content-type' => 'application/txt'],
                     'body' => json_encode([
-                        'spans' => $json,
+                        'spans' => $convertedSpans,
                     ]),
                 ]
             );
