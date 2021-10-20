@@ -22,11 +22,6 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/config/laravel_codecov_opentelemetry.php' => config_path('laravel_codecov_opentelemetry.php'),
         ]);
-
-        $this->mergeConfigFrom(
-            __DIR__.'/config/laravel_codecov_opentelemetry.php',
-            'laravel_codecov_opentelemetry'
-        );
     }
 
     /**
@@ -34,6 +29,11 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(
+            __DIR__.'/config/laravel_codecov_opentelemetry.php',
+            'laravel_codecov_opentelemetry'
+        );
+
         $instance = $this->initOpenTelemetry();
 
         if ($instance) {
@@ -57,8 +57,8 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
 
         $exporter = new CodecovExporter(
             config('laravel_codecov_opentelemetry.service_name'),
-            config('laravel_codecov_opentelemetry.codecov_endpoint'),
-            config('laravel_codecov_opentelemetry.codecov_token')
+            config('laravel_codecov_opentelemetry.codecov_host'),
+            config('laravel_codecov_opentelemetry.profiling_token')
         );
 
         $provider = new TracerProvider();

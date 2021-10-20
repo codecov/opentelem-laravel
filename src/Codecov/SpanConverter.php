@@ -24,6 +24,7 @@ class SpanConverter
     {
         $spanParent = $span->getParent();
         $duration = ($span->getEnd() - $span->getStart()) / 1e3;
+
         $row = [
             'name' => $span->getSpanName(),
             'context' => [
@@ -44,8 +45,25 @@ class SpanConverter
             'events' => [],
         ];
 
+        $coverage = [];
+
         foreach ($span->getAttributes() as $k => $v) {
-            $row['attributes'][$k] = $this->sanitizeTagValue($v->getValue());
+            $v = $this->sanitizeTagValue($v->getValue());
+
+            if ('codecov.type' == $k) {
+                // Push to codecov specific section of span
+                $coverage['type'] = $v;
+            } elseif ('codecov.coverage' == $k) {
+                // Push to codecov specific section of span
+                $coverage['coverage'] = $v;
+            } else {
+                // Push to general attributes
+                $row['attributes'][$k] = $v;
+            }
+        }
+
+        if ($coverage) {
+            $row['codecov'] = $coverage;
         }
 
         // opentelemetry php's getlinks method isn't implemented yet.
@@ -69,7 +87,6 @@ class SpanConverter
 
     private function sanitizeTagValue($value)
     {
-        // Casting false to string makes an empty string
         if (is_bool($value)) {
             return $value ? 'true' : 'false';
         }

@@ -11,7 +11,7 @@ return [
     |
     */
 
-    'enable' => env('CODECOV_CONTRACT_ENABLED', true),
+    'enable' => env('CODECOV_OTEL_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -25,19 +25,19 @@ return [
     |
     */
 
-    'service_name' => env('CODECOV_CONTRACT_SERVICE_NAME', 'laravel-codecov-opentelem'),
+    'service_name' => env('CODECOV_OTEL_SERVICE_NAME', 'laravel-codecov-opentelem'),
 
     /*
     |--------------------------------------------------------------------------
-    | Codecov Endpoint
+    | Codecov Host
     |--------------------------------------------------------------------------
     |
-    | This value is the URL of your Codecov endpoint. Make sure you include the
-    | protocol and port number.
+    | This value is the URL of your Codecov host. Make sure you include the
+    | protocol and (if needed) port number. e.g., https://my-codecov-host:4100
     |
     */
 
-    'codecov_endpoint' => env('CODECOV_CONTRACT_ENDPOINT', 'http://localhost'),
+    'codecov_host' => env('CODECOV_OTEL_HOST', 'http://localhost'),
 
     /*
     |--------------------------------------------------------------------------
@@ -48,7 +48,7 @@ return [
     |
     */
 
-    'codecov_token' => env('CODECOV_CONTRACT_TOKEN', null),
+    'profiling_token' => env('CODECOV_OTEL_PROFILING_TOKEN', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -58,42 +58,45 @@ return [
     | The environment in which the application is running. Defaults to APP_ENV env var
     | if specified. Otherwise null.
     */
-    'execution_environment' => env('CODECOV_CONTRACT_ENVIRONMENT', env('APP_ENV', null)),
+    'execution_environment' => env('CODECOV_OTEL_ENVIRONMENT', env('APP_ENV', null)),
 
     /*
     |--------------------------------------------------------------------------
-    | Release Id
+    | Profiling Id
     |--------------------------------------------------------------------------
     |
     | A unique id associated with the project being instrumented. It is recommended to change this
     | id on every deployment and have it match across test and production envs. E.g., semver or commit SHA.
     |
     */
-    'release_id' => env('CODECOV_CONTRACT_RELEASE_ID', env('COMMIT_SHA', '0.0.0')),
+    'profiling_id' => env('CODECOV_OTEL_PROFILING_ID', env('COMMIT_SHA', null)),
 
     /*
     |--------------------------------------------------------------------------
-    | Tagging
+    | Tracked Spans Sample Rate
     |--------------------------------------------------------------------------
     |
-    | The Trace middleware is able to enrich spans covering a HTTP request with
-    | metadata about the request. Using this array you can decide which metadata
-    | is included in your spans' tags.
+    | The rate to sample spans with line execution information. For performance reasons, it is not recommended
+    | to track every span. The default value ensures one out of ten spans will be tracked on average.
+    | Minimum Value: 0 -- no tracked spans, Maximum Value: 100 -- all spans tracked.
+    |
+    | A value of 0 will effectively disable tracked span creation completely. Useful if you are not interested in
+    | any features that require line execution information.
     |
     */
+    'tracked_spans_sample_rate' => env('CODECOV_OTEL_TRACKED_SPANS_SAMPLE_RATE', 10),
 
-    'tags' => [
-        'ip' => false, // Requester's IP address
-        'path' => true, // Path requested
-        'url' => true, // Full URL requested
-        'method' => true, // HTTP method of the request
-        'secure' => false, // Whether the request has been secured with SSL/TLS
-        'ua' => false, // Requester's user agent
-        'user' => false, // Authenticated username
-        'action' => true, //Controller action for request if available
-        'server' => false, //Request server if available.
-        'environment' => true, //The execution environment.
-        'release_id' => true, //A unique id for the release being measured, e.g. semver or commit SHA.
-        'line_execution' => false, //Report lines executed. Requires pcov extension.
-    ],
+    /*
+    |--------------------------------------------------------------------------
+    | Untracked Spans Sample Rate
+    |--------------------------------------------------------------------------
+    |
+    | The rate to sample spans without line execution information. For performance reasons, it is not recommended
+    | to track every span. The default value ensures one out of five spans will be tracked on average.
+    |
+    | Generally untracked spans will be much more efficient to track.
+    | Minimum Value: 0 -- no tracked spans, Maximum Value: 100 -- all untracked spans.
+    |
+    */
+    'untracked_spans_sample_rate' => env('CODECOV_OTEL_UNTRACKED_SPANS_SAMPLE_RATE', 10),
 ];
