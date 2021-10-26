@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Codecov\LaravelCodecovOpenTelemetry\Codecov;
 
+use Codecov\LaravelCodecovOpenTelemetry\Exceptions\NoCodeException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use InvalidArgumentException;
@@ -121,9 +122,10 @@ class Exporter implements Trace\Exporter
             // This will prevent a redundant api call if it isn't needed.
             // It is expected version support will change as the codecov api changes
             // to accommodate the stateless approach required by this package.
-            $version = $this->setProfilerVersion();
+
+            //$version = $this->setProfilerVersion();
+            $version = config('laravel_codecov_opentelemetry.profiling_id');
             $presignedURL = $this->getPresignedPut($version);
-            $json = json_encode($convertedSpans);
 
             $response = $this->client->request(
                 'PUT',
@@ -131,10 +133,15 @@ class Exporter implements Trace\Exporter
                 [
                     'headers' => ['content-type' => 'application/txt'],
                     'body' => json_encode([
-                        'spans' => $json,
+                        'spans' => $convertedSpans,
                     ]),
                 ]
             );
+        } catch (NoCodeException $e) {
+            // We did not have a code. so we have to create one and try again.
+            $version = $this->setProfilerVersion();
+
+            return $this->export($spans);
         } catch (RequestExceptionInterface $e) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
@@ -166,6 +173,7 @@ class Exporter implements Trace\Exporter
             $payload = [
                 'version_identifier' => $version,
                 'environment' => $env,
+                'code' => $version,
             ];
 
             $response = $this->client->request(
@@ -194,15 +202,13 @@ class Exporter implements Trace\Exporter
     public function getPresignedPut(?string $externalId = null)
     {
         try {
-            if ($externalId) {
-                $payload = [
-                    'profiling' => $externalId,
-                ];
-            } else {
-                $payload = [
-                    'profiling' => 'default',
-                ];
+            if (!$externalId) {
+                $externalId = 'default';
             }
+
+            $payload = [
+                'profiling' => $externalId,
+            ];
 
             $response = $this->client->request(
                 'POST',
@@ -221,6 +227,16 @@ class Exporter implements Trace\Exporter
 
             return $response->raw_upload_location;
         } catch (RequestExceptionInterface $e) {
+            $response = $e->getResponse();
+            $responseBody = json_decode($response->getBody()->getContents());
+            if ($responseBody->profiling) {
+                foreach ($responseBody->profiling as $errorMsg) {
+                    if ($errorMsg == 'Object with code='.$externalId.' does not exist.') {
+                        throw new NoCodeException('Profile version with code '.$externalId.' does not exist.');
+                    }
+                }
+            }
+
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
             return Trace\Exporter::FAILED_RETRYABLE;

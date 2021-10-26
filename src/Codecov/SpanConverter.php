@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace  Codecov\LaravelCodecovOpenTelemetry\Codecov;
 
 use OpenTelemetry\Trace\Span;
+use SebastianBergmann\CodeCoverage\Report\Cobertura;
 
 class SpanConverter
 {
@@ -48,17 +49,18 @@ class SpanConverter
         $coverage = [];
 
         foreach ($span->getAttributes() as $k => $v) {
-            $v = $this->sanitizeTagValue($v->getValue());
-
             if ('codecov.type' == $k) {
                 // Push to codecov specific section of span
-                $coverage['type'] = $v;
+                $coverage['type'] = $this->sanitizeTagValue($v->getValue());
             } elseif ('codecov.coverage' == $k) {
                 // Push to codecov specific section of span
-                $coverage['coverage'] = $v;
+                //convert the coverage object to cobertura, then base64 encode.
+                $cobertura = (new Cobertura())->process($v->getValue());
+                $cobertura = $this->sanitizeTagValue($cobertura);
+                $coverage['coverage'] = base64_encode($cobertura);
             } else {
                 // Push to general attributes
-                $row['attributes'][$k] = $v;
+                $row['attributes'][$k] = $this->sanitizeTagValue($v->getValue());
             }
         }
 
