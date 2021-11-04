@@ -16,11 +16,15 @@ This package is not intended to be a general integration library for open teleme
 
 ## Installation
 
-Bring into your project using Composer as follows:
+### Project Dependencies
+
+Bring this package into your project using Composer as follows:
 
 ```
 composer require codecov/laravel-codecov-opentelemetry
 ```
+
+### System Dependencies
 
 In order to sample line execution data, which is highly recommended when using this package, some configuration is required. Specifically, the PCOV extension must be installed and enabled in your `php.ini` file.
 
@@ -36,7 +40,7 @@ RUN apt-get update \
     && apt-get -y install php7.4-pcov
 ```
 
-For other versions oh PHP, such as 8.0, you should ensure the needed pcov system package exists, and update the package name with the appropriate version.
+For other versions of PHP, such as 8.0, you should ensure the needed pcov system package exists, and update the package name with the appropriate version.
 
 ### Alpine with PHP 8.0
 
