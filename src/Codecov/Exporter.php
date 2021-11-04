@@ -151,14 +151,6 @@ class Exporter implements Trace\Exporter
             return Trace\Exporter::FAILED_RETRYABLE;
         }
 
-        if ($response->getStatusCode() >= 400 && $response->getStatusCode() < 500) {
-            return Trace\Exporter::FAILED_NOT_RETRYABLE;
-        }
-
-        if ($response->getStatusCode() >= 500 && $response->getStatusCode() < 600) {
-            return Trace\Exporter::FAILED_RETRYABLE;
-        }
-
         return Trace\Exporter::SUCCESS;
     }
 
