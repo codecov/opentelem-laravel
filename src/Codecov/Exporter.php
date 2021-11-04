@@ -151,18 +151,6 @@ class Exporter implements Trace\Exporter
             return Trace\Exporter::FAILED_RETRYABLE;
         }
 
-        if (!$response) {
-            return Trace\Exporter::FAILED_NOT_RETRYABLE;
-        }
-
-        if ($response->getStatusCode() >= 400 && $response->getStatusCode() < 500) {
-            return Trace\Exporter::FAILED_NOT_RETRYABLE;
-        }
-
-        if ($response->getStatusCode() >= 500 && $response->getStatusCode() < 600) {
-            return Trace\Exporter::FAILED_RETRYABLE;
-        }
-
         return Trace\Exporter::SUCCESS;
     }
 
@@ -190,8 +178,7 @@ class Exporter implements Trace\Exporter
                 ]
             );
 
-            $body = json_decode((string) $response->getBody());
-            return $body->external_id;
+            return $response->external_id;
         } catch (RequestExceptionInterface $e) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
@@ -219,9 +206,7 @@ class Exporter implements Trace\Exporter
                 ]
             );
 
-
-            $body = json_decode((string) $response->getBody());
-            return $body->raw_upload_location;
+            return $response->raw_upload_location;
         } catch (RequestExceptionInterface $e) {
             $response = $e->getResponse();
             $responseBody = json_decode((string) $response->getBody()->getContents());
@@ -265,6 +250,6 @@ class Exporter implements Trace\Exporter
             'body' => json_encode($body),
         ]);
 
-        return $response;
+        return json_decode((string) $response->getBody());
     }
 }
