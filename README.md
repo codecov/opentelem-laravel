@@ -31,7 +31,7 @@ In order to sample line execution data, which is highly recommended when using t
 
 Enabling pcov is dependent on the underlying system where you are running PHP. Specific examples are as follows:
 
-### Ubuntu with PHP 7.4
+#### Ubuntu with PHP 7.4
 
 Installing with Ubuntu is fairly straightforward, one must add the pcov system dependency and ensure pcov is enabled in the `php.ini` file:
 
@@ -43,7 +43,7 @@ RUN apt-get update \
 
 For other versions of PHP, such as 8.0, you should ensure the needed pcov system package exists, and update the package name with the appropriate version.
 
-### Alpine with PHP 8.0
+#### Alpine with PHP 8.0
 
 The following assumes you're running Alpine 3.14 as a docker image. Dockerfile specific instructions are as follows:
 
@@ -97,6 +97,30 @@ The following settings are available, and more information can be found in the [
 | profiling_id                | CODECOV_OTEL_PROFILING_ID                | `COMMIT_SHA` if defined, otherwise "default" | A unique identifier for the specific release. Commit SHA is recommended, but anything can be provided, such as semver.                                                                                               | No                                |
 | tracked_spans_sample_rate   | CODECOV_OTEL_TRACKED_SPANS_SAMPLE_RATE   | 10                                           | Percentage of spans that are sampled with execution data. Note that sampling execution data does incur some performance penalty, so 10% is recommended for most services                                             | No                                |
 | untracked_spans_sample_rate | CODECOV_OTEL_UNTRACKED_SPANS_SAMPLE_RATE | 10                                           | Percentage of spans that are sampled without execution data. These spans incur a much smaller performance penalty, but do not provide as robust a data set to Codecov, resulting in some functionality being limited | No                                |
+
+## Usage
+
+This package is currently intended to be used as a Laravel route middleware. After installing the package you should add it to your `$routeMiddleware` in `app/Http/Kernel.php` as follows:
+
+```
+    protected $routeMiddleware = [
+        'auth' => \App\Http\Middleware\Authenticate::class,
+        'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+        //...other middleware
+        'codecov.insights' => \Codecov\LaravelCodecovOpenTelemetry\Middleware\Trace::class,
+    ];
+```
+
+Once added there you can apply the middleware to various routes in your `routes/web.http` file as follows:
+
+```
+ Route::middleware(['codecov.insights'])->group(function () {
+        //...routes
+    });
+
+```
+
+or any other mechanism by which you prefer to add middleware. 
 
 ## Performance Implications
 
