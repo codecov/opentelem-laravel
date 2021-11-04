@@ -51,7 +51,7 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
      */
     private function initOpenTelemetry(): ?Tracer
     {
-        if (!config('laravel_codecov_opentelemetry.enable')) {
+        if (!config('laravel_codecov_opentelemetry.enable') || !config('laravel_codecov_opentelemetry.profiling_token')) {
             return null;
         }
 
