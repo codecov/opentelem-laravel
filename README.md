@@ -12,7 +12,8 @@ This package is not intended to be a general integration library for open teleme
 
 1. A repository that is active on [Codecov](https://codecov.io)
 2. A profiling token obtainable from Codecov.
-3. pcov installed as a PHP extension (see _Installation_ below)
+3. PHP version >=7.4
+4. pcov installed as a PHP extension (see _Installation_ below)
 
 ## Installation
 
