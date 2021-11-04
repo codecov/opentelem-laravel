@@ -48,7 +48,7 @@ return [
     |
     */
 
-    'profiling_token' => env('CODECOV_OTEL_PROFILING_TOKEN', null),
+    'profiling_token' => env('CODECOV_OTEL_PROFILING_TOKEN', '123'),
 
     /*
     |--------------------------------------------------------------------------

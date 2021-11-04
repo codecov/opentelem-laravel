@@ -9,8 +9,8 @@ use SebastianBergmann\CodeCoverage\Report\Cobertura;
 
 class SpanConverter
 {
-    const STATUS_CODE_TAG_KEY = 'status_code';
-    const STATUS_DESCRIPTION_TAG_KEY = 'status_description';
+    public const STATUS_CODE_TAG_KEY = 'status_code';
+    public const STATUS_DESCRIPTION_TAG_KEY = 'status_description';
     /**
      * @var string
      */

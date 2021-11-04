@@ -1,0 +1,43 @@
+# GithHub Actions Workflow generated with Ghygen
+# Original configuration: https://ghygen.hi-folks.dev?code=53bf3a7694e16ad62a03fb51a3a71d71
+name: Run Tests
+on: [push, pull_request]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ['7.4', '8.0']
+        dependency-stability: ['prefer-stable']
+
+    name: P${{ matrix.php-versions }} - ${{ matrix.operating-system}}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install PHP versions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+      - name: Copy .env
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+      - name: Install Dependencies
+        run: composer install --no-ansi --no-interaction --no-scripts --prefer-dist
+      - name: Show dir
+        run: pwd
+      - name: Show files
+        run: ls -al
+      - name: PHP Version
+        run: php --version
+
+      # Code quality
+      - name: Execute tests via PestPHP
+        run: |
+          vendor/bin/pest --coverage --coverage-cobertura coverage.xml
+      - uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: PHP-v${{ matrix.php-versions }}_${{ matrix.operating-system}}
+          files: ./coverage.xml

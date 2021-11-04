@@ -4,9 +4,10 @@
   "type": "library",
   "license": "MIT",
   "require": {
+    "php": "^7.3|^8.0",
     "open-telemetry/opentelemetry": "0.0.2",
-    "guzzlehttp/guzzle": "^7.2",
-    "phpunit/php-code-coverage": "^9.2"
+    "guzzlehttp/guzzle": "^7.0.1",
+    "phpunit/php-code-coverage": "^9.2.8"
   },
   "autoload": {
     "psr-4": {
@@ -17,14 +18,20 @@
     "laravel": {
       "providers": [
         "Codecov\\LaravelCodecovOpenTelemetry\\LaravelOpenTelemetryServiceProvider"
-      ]
+      ],
+      "aliases": {
+        "Config": "Illuminate\\Support\\Facades\\Config"
+      }
     }
   },
   "scripts": {
     "format": "phpcbf --standard=psr2 src/"
   },
   "require-dev": {
-    "orchestra/testbench": "^4.0",
-    "squizlabs/php_codesniffer": "^3.5"
+    "orchestra/testbench": "^5.0|^6.0",
+    "phpunit/phpunit": "^9.3.3",
+    "pestphp/pest-plugin-laravel": "^1.0",
+    "mockery/mockery": "^1.3.1",
+    "squizlabs/php_codesniffer": "^3.6"
   }
 }

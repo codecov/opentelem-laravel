@@ -63,13 +63,13 @@ class Exporter implements Trace\Exporter
     private $authToken;
 
     public function __construct(
-        $name,
+        string $name,
         string $host,
         string $authToken,
         ClientInterface $client = null,
         RequestFactoryInterface $requestFactory = null,
         StreamFactoryInterface $streamFactory = null,
-        SpanConverter $spanConverter = null,
+        SpanConverter $spanConverter = null
     ) {
         $parsedDsn = parse_url($host);
 
@@ -95,6 +95,16 @@ class Exporter implements Trace\Exporter
         $this->authToken = $authToken;
     }
 
+    public function convertSpans(iterable $spans)
+    {
+        $convertedSpans = [];
+        foreach ($spans as $span) {
+            array_push($convertedSpans, $this->spanConverter->convert($span));
+        }
+
+        return $convertedSpans;
+    }
+
     /**
      * Exports the provided Span data.
      *
@@ -105,17 +115,16 @@ class Exporter implements Trace\Exporter
     public function export(iterable $spans): int
     {
         if (!$this->running) {
-            return Exporter::FAILED_NOT_RETRYABLE;
+            return Trace\Exporter::FAILED_NOT_RETRYABLE;
         }
 
         if (empty($spans)) {
             return Trace\Exporter::SUCCESS;
         }
 
-        $convertedSpans = [];
-        foreach ($spans as $span) {
-            array_push($convertedSpans, $this->spanConverter->convert($span));
-        }
+        $convertedSpans = $this->convertSpans($spans);
+        $version = config('laravel_codecov_opentelemetry.profiling_id');
+
 
         try {
             // Only set a profiler version if an identifier has been provided.
@@ -123,23 +132,17 @@ class Exporter implements Trace\Exporter
             // It is expected version support will change as the codecov api changes
             // to accommodate the stateless approach required by this package.
 
-            //$version = $this->setProfilerVersion();
-            $version = config('laravel_codecov_opentelemetry.profiling_id');
-            $presignedURL = $this->getPresignedPut($version);
+            $presignedURL = $this->getPresignedPut($this->authToken, $this->uploadsUrl, $version);
 
-            $response = $this->client->request(
+            $response = $this->makeRequest(
                 'PUT',
                 $presignedURL,
-                [
-                    'headers' => ['content-type' => 'application/txt'],
-                    'body' => json_encode([
-                        'spans' => $convertedSpans,
-                    ]),
-                ]
+                ['content-type' => 'application/txt'],
+                ['spans' => $convertedSpans],
             );
         } catch (NoCodeException $e) {
             // We did not have a code. so we have to create one and try again.
-            $version = $this->setProfilerVersion();
+            $version = $this->setProfilerVersion($this->authToken, config('laravel_codecov_opentelemetry.execution_environment'), $this->versionsUrl, $version);
 
             return $this->export($spans);
         } catch (RequestExceptionInterface $e) {
@@ -159,37 +162,29 @@ class Exporter implements Trace\Exporter
         return Trace\Exporter::SUCCESS;
     }
 
-    public function setProfilerVersion()
+    public function setProfilerVersion(string $authToken, string $env, string $versionsUrl, ?string $version)
     {
         try {
-            $version = config('laravel_codecov_opentelemetry.profiling_id');
-
             if (!$version) {
                 return null;
             }
 
             $env = config('laravel_codecov_opentelemetry.execution_environment');
 
-            $payload = [
-                'version_identifier' => $version,
-                'environment' => $env,
-                'code' => $version,
-            ];
-
-            $response = $this->client->request(
+            $response = $this->makeRequest(
                 'POST',
-                $this->versionsUrl,
+                $versionsUrl,
                 [
-                    'headers' => [
-                        'content-type' => 'application/json',
-                        'Authorization' => 'repotoken '.$this->authToken,
-                        'Accept' => 'application/json',
-                    ],
-                    'body' => json_encode($payload),
+                    'content-type' => 'application/json',
+                    'Authorization' => 'repotoken '.$authToken,
+                    'Accept' => 'application/json',
+                ],
+                [
+                    'version_identifier' => $version,
+                    'environment' => $env,
+                    'code' => $version,
                 ]
             );
-
-            $response = json_decode((string) $response->getBody());
 
             return $response->external_id;
         } catch (RequestExceptionInterface $e) {
@@ -199,36 +194,30 @@ class Exporter implements Trace\Exporter
         }
     }
 
-    public function getPresignedPut(?string $externalId = null)
+    public function getPresignedPut(string $authToken, string $uploadsUrl, ?string $externalId = null)
     {
         try {
             if (!$externalId) {
                 $externalId = 'default';
             }
 
-            $payload = [
-                'profiling' => $externalId,
-            ];
-
-            $response = $this->client->request(
+            $response = $this->makeRequest(
                 'POST',
-                $this->uploadsUrl,
+                $uploadsUrl,
                 [
-                    'headers' => [
-                        'content-type' => 'application/json',
-                        'Authorization' => 'repotoken '.$this->authToken,
-                        'Accept' => 'application/json',
-                    ],
-                    'body' => json_encode($payload),
+                    'content-type' => 'application/json',
+                    'Authorization' => 'repotoken '.$authToken,
+                    'Accept' => 'application/json',
+                ],
+                [
+                    'profiling' => $externalId,
                 ]
             );
-
-            $response = json_decode((string) $response->getBody());
 
             return $response->raw_upload_location;
         } catch (RequestExceptionInterface $e) {
             $response = $e->getResponse();
-            $responseBody = json_decode($response->getBody()->getContents());
+            $responseBody = json_decode((string) $response->getBody()->getContents());
             if ($responseBody->profiling) {
                 foreach ($responseBody->profiling as $errorMsg) {
                     if ($errorMsg == 'Object with code='.$externalId.' does not exist.') {
@@ -260,5 +249,15 @@ class Exporter implements Trace\Exporter
             $factory,
             $factory
         );
+    }
+
+    public function makeRequest(string $type, string $url, array $headers, array $body)
+    {
+        $response = $this->client->request($type, $url, [
+            'headers' => $headers,
+            'body' => json_encode($body),
+        ]);
+
+        return json_decode((string) $response->getBody());
     }
 }
