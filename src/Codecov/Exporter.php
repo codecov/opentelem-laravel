@@ -190,7 +190,7 @@ class Exporter implements Trace\Exporter
                 ]
             );
 
-            $body = $response->json_decode((string) $response->getBody());
+            $body = json_decode((string) $response->getBody());
             return $body->external_id;
         } catch (RequestExceptionInterface $e) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
@@ -220,7 +220,7 @@ class Exporter implements Trace\Exporter
             );
 
 
-            $body = $response->json_decode((string) $response->getBody());
+            $body = json_decode((string) $response->getBody());
             return $body->raw_upload_location;
         } catch (RequestExceptionInterface $e) {
             $response = $e->getResponse();
