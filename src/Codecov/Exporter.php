@@ -112,7 +112,7 @@ class Exporter implements Trace\Exporter
      *
      * @return int return code, defined on the Exporter interface
      */
-    public function export(iterable $spans): int
+    public function export(iterable $spans, bool $retry = true): int
     {
         if (!$this->running) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
@@ -134,7 +134,8 @@ class Exporter implements Trace\Exporter
 
             $presignedURL = $this->getPresignedPut($this->authToken, $this->uploadsUrl, $version);
 
-            $response = $this->makeRequest(
+
+            $this->makeRequest(
                 'PUT',
                 $presignedURL,
                 ['content-type' => 'application/txt'],
@@ -142,9 +143,12 @@ class Exporter implements Trace\Exporter
             );
         } catch (NoCodeException $e) {
             // We did not have a code. so we have to create one and try again.
-            $version = $this->setProfilerVersion($this->authToken, config('laravel_codecov_opentelemetry.execution_environment'), $this->versionsUrl, $version);
-
-            return $this->export($spans);
+            // Prevents an infinite recursion scenario that can happen if `profiling/versions` consistently
+            // fails.
+            if ($retry) {
+                $version = $this->setProfilerVersion($this->authToken, config('laravel_codecov_opentelemetry.execution_environment'), $this->versionsUrl, $version);
+                return $this->export($spans, false);
+            }
         } catch (RequestExceptionInterface $e) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
