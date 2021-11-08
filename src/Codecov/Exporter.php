@@ -162,9 +162,9 @@ class Exporter implements Trace\Exporter
     {
         try {
             if (!$version) {
-                // If we do not get a falsy version, we set to "NO_VERSION"
-                // This is specifically different than "default" which is the value
-                // we use when a user doesn't specify the version at all.
+                // If we do not get a falsy version, set to
+                // "default" which is the value we use when
+                // a user doesn't specify the version at all.
                 $version = 'default';
             }
 
