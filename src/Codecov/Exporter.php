@@ -162,7 +162,10 @@ class Exporter implements Trace\Exporter
     {
         try {
             if (!$version) {
-                return null;
+                // If we do not get a falsy version, we set to "NO_VERSION"
+                // This is specifically different than "default" which is the value
+                // we use when a user doesn't specify the version at all.
+                $version = "NO_VERSION";
             }
 
             $env = config('laravel_codecov_opentelemetry.execution_environment');
