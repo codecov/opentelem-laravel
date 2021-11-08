@@ -56,16 +56,17 @@ it('will terminate successfully if there are no spans to export', function () {
     $this->assertEquals(Trace\Exporter::SUCCESS, $exporter->export([]));
 });
 
-it('will not set a profiler version without a profiling_id', function () {
+it('will set some version without a profiling_id', function () {
     config(['laravel_codecov_opentelemetry.profiling_id' => null]);
 
-    $exporter = new CodecovExporter(
-        config('laravel_codecov_opentelemetry.service_name'),
-        config('laravel_codecov_opentelemetry.codecov_host'),
-        config('laravel_codecov_opentelemetry.profiling_token')
-    );
 
-    $this->assertEquals(null, $exporter->setProfilerVersion('abc123', 'local', 'https://profilingurl', config('laravel_codecov_opentelemetry.profiling_id')));
+    $mock = Mockery::mock(CodecovExporter::class)->makePartial();
+
+    $mock->shouldReceive('makeRequest')
+        ->andReturn((object) ['external_id' => 1])
+    ;
+
+    $this->assertEquals($mock->setProfilerVersion('abc123', 'local', 'https://profilingurl', config('laravel_codecov_opentelemetry.profiling_id')), 1);
 });
 
 it('properly sets a profiler version', function () {
