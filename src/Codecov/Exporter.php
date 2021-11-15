@@ -138,7 +138,7 @@ class Exporter implements Trace\Exporter
             $this->makeRequest(
                 'PUT',
                 $presignedURL,
-                ['content-type' => 'application/txt'],
+                ['content-type' => 'text/plain'],
                 ['spans' => $convertedSpans],
             );
         } catch (NoCodeException $e) {
