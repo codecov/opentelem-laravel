@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Codecov\LaravelCodecovOpenTelemetry\Codecov;
 
 use Codecov\LaravelCodecovOpenTelemetry\Exceptions\NoCodeException;
+use Codecov\LaravelCodecovOpenTelemetry\Codecov\Services\ApiClient;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use InvalidArgumentException;
@@ -43,7 +44,7 @@ class Exporter implements Trace\Exporter
     private $running = true;
 
     /**
-     * @var ClientInterface
+     * @var ApiClient
      */
     private $client;
 
@@ -66,7 +67,7 @@ class Exporter implements Trace\Exporter
         string $name,
         string $host,
         string $authToken,
-        ClientInterface $client = null,
+        $client = null,
         RequestFactoryInterface $requestFactory = null,
         StreamFactoryInterface $streamFactory = null,
         SpanConverter $spanConverter = null
@@ -86,7 +87,9 @@ class Exporter implements Trace\Exporter
 
         $this->uploadsUrl = $host.'/profiling/uploads';
         $this->versionsUrl = $host.'/profiling/versions';
-        $this->client = $client ?? new Client(['timeout' => 30]);
+        $this->client = $client ?? new ApiClient();
+
+        //$this->client = $client ?? new Client(['timeout' => 30]);
 
         $this->requestFactory = $requestFactory ? $requestFactory : new HttpFactory();
         $this->streamFactory = $streamFactory ? $streamFactory : new HttpFactory();
@@ -135,7 +138,7 @@ class Exporter implements Trace\Exporter
             $presignedURL = $this->getPresignedPut($this->authToken, $this->uploadsUrl, $version);
 
 
-            $this->makeRequest(
+            $this->client->sendRequest(
                 'PUT',
                 $presignedURL,
                 ['content-type' => 'text/plain'],
@@ -170,7 +173,7 @@ class Exporter implements Trace\Exporter
 
             $env = config('laravel_codecov_opentelemetry.execution_environment');
 
-            $response = $this->makeRequest(
+            $response = $this->client->sendRequest(
                 'POST',
                 $versionsUrl,
                 [
@@ -185,7 +188,7 @@ class Exporter implements Trace\Exporter
                 ]
             );
 
-            return $response->external_id;
+            return $response->getBody()->external_id;
         } catch (RequestExceptionInterface $e) {
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
@@ -200,7 +203,7 @@ class Exporter implements Trace\Exporter
                 $externalId = 'default';
             }
 
-            $response = $this->makeRequest(
+            $response = $this->client->sendRequest(
                 'POST',
                 $uploadsUrl,
                 [
@@ -213,6 +216,7 @@ class Exporter implements Trace\Exporter
                 ]
             );
 
+            $response = $response->getBody();
             return $response->raw_upload_location;
         } catch (RequestExceptionInterface $e) {
             $response = $e->getResponse();
@@ -248,15 +252,5 @@ class Exporter implements Trace\Exporter
             $factory,
             $factory
         );
-    }
-
-    public function makeRequest(string $type, string $url, array $headers, array $body)
-    {
-        $response = $this->client->request($type, $url, [
-            'headers' => $headers,
-            'body' => json_encode($body),
-        ]);
-
-        return json_decode((string) $response->getBody());
     }
 }
