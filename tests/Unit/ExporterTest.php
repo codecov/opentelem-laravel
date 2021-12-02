@@ -61,7 +61,7 @@ it('will set some version without a profiling_id', function () {
 
     $responseMock = Mockery::mock('Psr\Http\Message\ResponseInterface')->makePartial();
     $responseMock->shouldReceive('getBody')
-                 ->andReturn((object) ['external_id' => 1]);
+                 ->andReturn(json_encode(['external_id' => 1]));
 
     $mockClient = Mockery::mock(ApiClient::class)->makePartial();
     $mockClient->shouldReceive('sendRequest')
@@ -81,7 +81,7 @@ it('will set some version without a profiling_id', function () {
 it('properly sets a profiler version', function () {
     $responseMock = Mockery::mock('Psr\Http\Message\ResponseInterface')->makePartial();
     $responseMock->shouldReceive('getBody')
-                 ->andReturn((object) ['external_id' => 1]);
+                 ->andReturn(json_encode(['external_id' => 1]));
 
     $mockClient = Mockery::mock(ApiClient::class)->makePartial();
     $mockClient->shouldReceive('sendRequest')
@@ -100,7 +100,7 @@ it('properly sets a profiler version', function () {
 it('can get a presigned PUT', function () {
     $responseMock = Mockery::mock('Psr\Http\Message\ResponseInterface')->makePartial();
     $responseMock->shouldReceive('getBody')
-                 ->andReturn((object) ['raw_upload_location' => 'my-location']);
+                 ->andReturn(json_encode(['raw_upload_location' => 'my-location']));
 
     $mockClient = Mockery::mock(ApiClient::class)->makePartial();
     $mockClient->shouldReceive('sendRequest')
