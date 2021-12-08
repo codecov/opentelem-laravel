@@ -89,8 +89,6 @@ class Exporter implements Trace\Exporter
         $this->versionsUrl = $host.'/profiling/versions';
         $this->client = $client ?? new ApiClient();
 
-        //$this->client = $client ?? new Client(['timeout' => 30]);
-
         $this->requestFactory = $requestFactory ? $requestFactory : new HttpFactory();
         $this->streamFactory = $streamFactory ? $streamFactory : new HttpFactory();
 

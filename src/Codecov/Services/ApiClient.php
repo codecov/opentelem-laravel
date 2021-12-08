@@ -31,10 +31,4 @@ class ApiClient
         $response = $this->client->sendRequest($request);
         return $response;
     }
-
-    public function sendAsyncRequest(string $type, string $url, array $headers, array $body)
-    {
-        $response = $this->asyncClient->send($type, $url, $headers, json_encode($body));
-        return json_decode((string) $response->getBody());
-    }
 }
