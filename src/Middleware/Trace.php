@@ -67,7 +67,9 @@ class Trace
                 $filter
             );
 
-            $coverage->start($request->route()->getName());
+            //if we cannot get the route name, just use the time as a unique identifier.
+            $name = $request->route() ? $request->route()->getName() : ''.time();
+            $coverage->start($name ?? ''. time());
         }
 
         $response = $next($request);
