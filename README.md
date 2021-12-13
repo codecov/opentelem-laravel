@@ -25,9 +25,17 @@ Bring this package into your project using Composer as follows:
 composer require codecov/laravel-codecov-opentelemetry
 ```
 
+As of version `v0.1.0`, HTTP functionality has switched from Guzzle to HTTPlug to allow for more streamlined integration into applications. Therefore, you must bring your own HTTP client implementation to use this library. [You can read more about this here](https://docs.php-http.org/en/latest/httplug/users.html), but if you're not using an http client in your application already, it is recommended to do the following:
+
+```
+composer require php-http/curl-client guzzlehttp/psr7 php-http/message
+```
+
+Otherwise, it is recommend to [consult the HTTPlug documentation](https://docs.php-http.org/en/latest/httplug/users.html).
+
 ### System Dependencies
 
-In order to sample line execution data, which is highly recommended when using this package, some configuration is required. Specifically, the PCOV extension must be installed and enabled in your `php.ini` file.
+In order to sample line execution data, some configuration is required. Specifically, the PCOV extension must be installed and enabled in your `php.ini` file.
 
 Enabling pcov is dependent on the underlying system where you are running PHP. Specific examples are as follows:
 
@@ -37,8 +45,7 @@ Installing with Ubuntu is fairly straightforward, one must add the pcov system d
 
 ```
 # Install pcov
-RUN apt-get update \
-    && apt-get -y install php7.4-pcov
+$: apt-get update && apt-get -y install php7.4-pcov
 ```
 
 For other versions of PHP, such as 8.0, you should ensure the needed pcov system package exists, and update the package name with the appropriate version.
@@ -120,7 +127,7 @@ Once added there you can apply the middleware to various routes in your `routes/
 
 ```
 
-or any other mechanism by which you prefer to add middleware. 
+or any other mechanism by which you prefer to add middleware.
 
 ## Performance Implications
 
@@ -148,12 +155,12 @@ CODECOV_OTEL_ENABLED=false
 
 Results are as follows:
 
-| metric                   | disabled      | enabled @ 10%      |
-| ------------------------ | ------------- | ------------------ |
-| Time taken for tests (s) | 8.459         | 13.284             |
-| Requests per second      | 11.82         | 7.53               |
-| Time per request (ms)    | 84.59         | 132.835            |
+| metric                   | disabled | enabled @ 10% |
+| ------------------------ | -------- | ------------- |
+| Time taken for tests (s) | 8.459    | 13.284        |
+| Requests per second      | 11.82    | 7.53          |
+| Time per request (ms)    | 84.59    | 132.835       |
 
-While a performance penalty is indicated, it will only be for those 10% of endpoints that are actively sampled. 90% of requests in this case will incur no performance penalty. Furthermore, if a service is heavily trafficked, reducing sampling to 1% may be sufficient. 
+While a performance penalty is indicated, it will only be for those 10% of endpoints that are actively sampled. 90% of requests in this case will incur no performance penalty. Furthermore, if a service is heavily trafficked, reducing sampling to 1% may be sufficient.
 
 Also note that performance improvement is a work in progress, and we expect the above metrics to more closely align with subsequent releases.
