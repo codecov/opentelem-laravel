@@ -91,29 +91,7 @@ class Trace
 
     private function setSpanStatus(Span $span, int $httpStatusCode)
     {
-        switch ($httpStatusCode) {
-            case 400:
-                $span->setSpanStatus(SpanStatus::FAILED_PRECONDITION, SpanStatus::DESCRIPTION[SpanStatus::FAILED_PRECONDITION]);
-
-                return;
-
-            case 401:
-                $span->setSpanStatus(SpanStatus::UNAUTHENTICATED, SpanStatus::DESCRIPTION[SpanStatus::UNAUTHENTICATED]);
-
-                return;
-
-            case 403:
-                $span->setSpanStatus(SpanStatus::PERMISSION_DENIED, SpanStatus::DESCRIPTION[SpanStatus::PERMISSION_DENIED]);
-
-                return;
-
-            case 404:
-                $span->setSpanStatus(SpanStatus::NOT_FOUND, SpanStatus::DESCRIPTION[SpanStatus::NOT_FOUND]);
-
-                return;
-        }
-
-        if ($httpStatusCode >= 500 && $httpStatusCode < 600) {
+        if ($httpStatusCode >= 400 && $httpStatusCode < 600) {
             $span->setSpanStatus(SpanStatus::ERROR, SpanStatus::DESCRIPTION[SpanStatus::ERROR]);
         }
 

@@ -12,7 +12,8 @@
     "php-http/httplug": "^2.0",
     "php-http/message-factory": "^1.0",
     "php-http/discovery": "^1.0",
-    "php-http/client-common": "^2.5"
+    "php-http/client-common": "^2.5",
+    "ext-json": "*"
   },
   "autoload": {
     "psr-4": {

@@ -6,8 +6,7 @@ namespace Codecov\LaravelCodecovOpenTelemetry\Codecov;
 
 use Codecov\LaravelCodecovOpenTelemetry\Exceptions\NoCodeException;
 use Codecov\LaravelCodecovOpenTelemetry\Codecov\Services\ApiClient;
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\HttpFactory;
+use Http\Discovery\Psr17FactoryDiscovery;
 use InvalidArgumentException;
 use OpenTelemetry\Sdk\Trace;
 use OpenTelemetry\Trace as API;
@@ -49,12 +48,12 @@ class Exporter implements Trace\Exporter
     private $client;
 
     /**
-     * @var HttpFactory
+     * @var RequestFactoryInterface
      */
     private $requestFactory;
 
     /**
-     * @var HttpFactory
+     * @var StreamFactoryInterface
      */
     private $streamFactory;
 
@@ -89,8 +88,8 @@ class Exporter implements Trace\Exporter
         $this->versionsUrl = $host.'/profiling/versions';
         $this->client = $client ?? new ApiClient();
 
-        $this->requestFactory = $requestFactory ? $requestFactory : new HttpFactory();
-        $this->streamFactory = $streamFactory ? $streamFactory : new HttpFactory();
+        $this->requestFactory = $requestFactory ? $requestFactory : Psr17FactoryDiscovery::findRequestFactory();
+        $this->streamFactory = $streamFactory ? $streamFactory : Psr17FactoryDiscovery::findStreamFactory();
 
         $this->spanConverter = $spanConverter ?? new SpanConverter($name);
         $this->authToken = $authToken;
@@ -216,17 +215,12 @@ class Exporter implements Trace\Exporter
             );
 
             $response = json_decode((string) $response->getBody());
+            $this->checkForCode($response, $externalId);
             return $response->raw_upload_location;
         } catch (RequestExceptionInterface $e) {
             $response = $e->getResponse();
             $responseBody = json_decode((string) $response->getBody()->getContents());
-            if ($responseBody->profiling) {
-                foreach ($responseBody->profiling as $errorMsg) {
-                    if ($errorMsg == 'Object with code='.$externalId.' does not exist.') {
-                        throw new NoCodeException('Profile version with code '.$externalId.' does not exist.');
-                    }
-                }
-            }
+            $this->checkForCode($responseBody, $externalId);
 
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
@@ -239,17 +233,28 @@ class Exporter implements Trace\Exporter
         $this->running = false;
     }
 
-    public static function fromConnectionString(string $endpointUrl, string $name, string $authToken, $args = null)
+    public static function fromConnectionString(string $endpointUrl, string $name, string $authToken, $args = null): Exporter
     {
-        $factory = new HttpFactory();
+        $factory = Psr17FactoryDiscovery::findRequestFactory();
 
         return new Exporter(
             $name,
             $endpointUrl,
             $authToken,
-            new Client(),
+            new ApiClient(),
             $factory,
             $factory
         );
+    }
+
+    public function checkForCode(\stdClass $responseBody, string $externalId)
+    {
+        if ($responseBody->profiling) {
+            foreach ($responseBody->profiling as $errorMsg) {
+                if ($errorMsg == 'Object with code='.$externalId.' does not exist.') {
+                    throw new NoCodeException('Profile version with code '.$externalId.' does not exist.');
+                }
+            }
+        }
     }
 }
