@@ -215,12 +215,12 @@ class Exporter implements Trace\Exporter
             );
 
             $response = json_decode((string) $response->getBody());
-            $this->checkForCode($response, $externalId);
+            $this->checkForNoCode($response, $externalId);
             return $response->raw_upload_location;
         } catch (RequestExceptionInterface $e) {
             $response = $e->getResponse();
             $responseBody = json_decode((string) $response->getBody()->getContents());
-            $this->checkForCode($responseBody, $externalId);
+            $this->checkForNoCode($responseBody, $externalId);
 
             return Trace\Exporter::FAILED_NOT_RETRYABLE;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
@@ -247,9 +247,9 @@ class Exporter implements Trace\Exporter
         );
     }
 
-    public function checkForCode(\stdClass $responseBody, string $externalId)
+    public function checkForNoCode(\stdClass $responseBody, string $externalId)
     {
-        if ($responseBody->profiling) {
+        if (isset($responseBody->profiling) && is_array($responseBody->profiling)) {
             foreach ($responseBody->profiling as $errorMsg) {
                 if ($errorMsg == 'Object with code='.$externalId.' does not exist.') {
                     throw new NoCodeException('Profile version with code '.$externalId.' does not exist.');
