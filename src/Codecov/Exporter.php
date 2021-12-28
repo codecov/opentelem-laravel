@@ -170,6 +170,10 @@ class Exporter implements Trace\Exporter
 
             $env = config('laravel_codecov_opentelemetry.execution_environment');
 
+            // append a valid environment if it exists.
+            // This will allow the same version to be used across environments.
+            $code = $env ? $env . '-' . $version : $version;
+
             $response = $this->client->sendRequest(
                 'POST',
                 $versionsUrl,
@@ -181,7 +185,7 @@ class Exporter implements Trace\Exporter
                 [
                     'version_identifier' => $version,
                     'environment' => $env,
-                    'code' => $version,
+                    'code' => $code,
                 ]
             );
 
