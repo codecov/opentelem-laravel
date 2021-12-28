@@ -78,6 +78,31 @@ it('will set some version without a profiling_id', function () {
     $this->assertEquals($exporter->setProfilerVersion('abc123', 'local', 'https://profilingurl', config('laravel_codecov_opentelemetry.profiling_id')), 1);
 });
 
+
+it('will set some version without an environment', function () {
+    config(['laravel_codecov_opentelemetry.profiling_id' => null]);
+    config(['laravel_codecov_opentelemetry.execution_environment' => null]);
+
+    $responseMock = Mockery::mock('Psr\Http\Message\ResponseInterface')->makePartial();
+    $responseMock->shouldReceive('getBody')
+                 ->andReturn(json_encode(['external_id' => 1]));
+
+    $mockClient = Mockery::mock(ApiClient::class)->makePartial();
+    $mockClient->shouldReceive('sendRequest')
+        ->andReturn($responseMock);
+
+    $exporter = new CodecovExporter(
+        config('laravel_codecov_opentelemetry.service_name'),
+        config('laravel_codecov_opentelemetry.codecov_host'),
+        config('laravel_codecov_opentelemetry.profiling_token'),
+        $mockClient
+    );
+
+
+    $this->assertEquals($exporter->setProfilerVersion('abc123', 'local', 'https://profilingurl', config('laravel_codecov_opentelemetry.profiling_id')), 1);
+});
+
+
 it('properly sets a profiler version', function () {
     $responseMock = Mockery::mock('Psr\Http\Message\ResponseInterface')->makePartial();
     $responseMock->shouldReceive('getBody')
