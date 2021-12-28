@@ -102,16 +102,16 @@ class Trace
 
     private function addConfiguredTags(Span $span, Request $request, $response)
     {
-        $span->setAttribute('http.status_code', $response->status());
-        $span->setAttribute('http.method', $request->method());
-        $span->setAttribute('http.host', $request->root());
-        $span->setAttribute('http.target', '/'.$request->path());
+        $span->setAttribute('http.status_code', $response->status() ?? 'not passed');
+        $span->setAttribute('http.method', $request->method()) ?? 'not passed';
+        $span->setAttribute('http.host', $request->root() ?? 'not passed');
+        $span->setAttribute('http.target', '/'.$request->path() ?? 'not passed');
         $span->setAttribute('http.scheme', $request->secure() ? 'https' : 'http');
-        $span->setAttribute('http.flavor', $_SERVER['SERVER_PROTOCOL']);
+        $span->setAttribute('http.flavor', $_SERVER['SERVER_PROTOCOL'] ?? 'not passed');
         $span->setAttribute('http.server_name', $request->server('SERVER_ADDR'));
-        $span->setAttribute('http.user_agent', $request->userAgent());
-        $span->setAttribute('net.host.port', $request->server('SERVER_PORT'));
-        $span->setAttribute('net.peer.ip', $request->ip());
-        $span->setAttribute('net.peer.port', $_SERVER['REMOTE_PORT']);
+        $span->setAttribute('http.user_agent', $request->userAgent() ?? 'not passed');
+        $span->setAttribute('net.host.port', $request->server('SERVER_PORT') ?? 'not passed');
+        $span->setAttribute('net.peer.ip', $request->ip() ?? 'not passed');
+        $span->setAttribute('net.peer.port', $_SERVER['REMOTE_PORT'] ?? 'not passed');
     }
 }
