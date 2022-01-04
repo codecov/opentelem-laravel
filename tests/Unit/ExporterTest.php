@@ -3,6 +3,10 @@
 use Codecov\LaravelCodecovOpenTelemetry\Codecov\Exporter as CodecovExporter;
 use Codecov\LaravelCodecovOpenTelemetry\Exceptions\NoCodeException;
 use GuzzleHttp\Exception\RequestException;
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\NetworkExceptionInterface;
+use Psr\Http\Client\RequestExceptionInterface;
+
 use GuzzleHttp\Psr7\Request as GuzzleRequest;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use OpenTelemetry\Sdk\Trace;
@@ -139,6 +143,27 @@ it('can get a presigned PUT', function () {
     );
 
     $this->assertEquals($exporter->getPresignedPut('abc123', 'https://profilingurl', 'abc'), 'my-location');
+});
+
+it('can upload asynchronously', function () {
+    $promiseMock = Mockery::mock('Psr\Http\Promise\FulfilledPromise')->makePartial();
+    $promiseMock->shouldReceive('then')
+                ->andReturn(true);
+
+
+    $mockClient = Mockery::mock(ApiClient::class)->makePartial();
+    $mockClient->shouldReceive('sendRequest')
+        ->andReturn($promiseMock);
+
+    $exporter = new CodecovExporter(
+        config('laravel_codecov_opentelemetry.service_name'),
+        config('laravel_codecov_opentelemetry.codecov_host'),
+        config('laravel_codecov_opentelemetry.profiling_token'),
+        $mockClient
+    );
+
+    $promise = $exporter->performAsyncUpload('abc123', 'https://profilingurl', ['a' => true], 'abc');
+    $this->assertEquals($promise, $promiseMock);
 });
 
 it('properly throws a NoCodeException', function () {
