@@ -11,13 +11,23 @@ class ApiClient
     private $asyncClient;
     private $client;
     private $messageFactory;
-
+    private bool $isAsync = false;
 
     public function __construct($client = null, $messageFactory = null, $asyncClient = null)
     {
         $this->asyncClient = $asyncClient ?? HttpAsyncClientDiscovery::find();
+
+        if ($this->asyncClient && !config('laravel_codecov_opentelemetry.force_sync_requests')) {
+            $this->isAsync = true;
+        }
+
         $this->client = $client ?? HttpClientDiscovery::find();
         $this->messageFactory = $messageFactory ?? MessageFactoryDiscovery::find();
+    }
+
+    public function isAsync(): bool
+    {
+        return $this->isAsync;
     }
 
     public function sendRequest(string $type, string $url, array $headers, ?array $body = null)
@@ -28,7 +38,13 @@ class ApiClient
             $request = $this->messageFactory->createRequest($type, $url, $headers);
         }
 
-        $response = $this->client->sendRequest($request);
-        return $response;
+        if ($this->isAsync()) {
+            //attempt to send the request async.
+            $promise = $this->asyncClient->sendAsyncRequest($request);
+            return $promise;
+        } else {
+            $response = $this->client->sendRequest($request);
+            return $response;
+        }
     }
 }

@@ -1,6 +1,6 @@
 # laravel-codecov-opentelemetry
 
-_Note: This is a work in progress project and is currently not recommended for use by anyone._
+_Note: This packaged is part of the [Runtime Insights Early Access Program](https://about.codecov.io/product/feature/runtime-insights/)._
 
 ## Purpose
 
@@ -8,7 +8,7 @@ This library aims to make interfacing with Codecov's open telemetry based projec
 
 This package is not intended to be a general integration library for open telemetry, zipkin, etc. If you're looking for a more general opentelemetry integration package for Laravel, we currently recommended the package that inspired this one: https://github.com/SeanHood/laravel-opentelemetry
 
-## Requirements and Prequisites
+## Requirements and Pre-requisites
 
 1. A repository that is active on [Codecov](https://codecov.io)
 2. A profiling token obtainable from Codecov.
@@ -85,6 +85,8 @@ If your Alpine configuration already leverages another mechanism to install PHP 
 
 ## Configuration
 
+### Environment Variables
+
 This package provides a configuration file that can be published via
 
 ```
@@ -104,6 +106,20 @@ The following settings are available, and more information can be found in the [
 | profiling_id                | CODECOV_OTEL_PROFILING_ID                | `COMMIT_SHA` if defined, otherwise "default" | A unique identifier for the specific release. Commit SHA is recommended, but anything can be provided, such as semver.                                                                                               | No                                |
 | tracked_spans_sample_rate   | CODECOV_OTEL_TRACKED_SPANS_SAMPLE_RATE   | 10                                           | Percentage of spans that are sampled with execution data. Note that sampling execution data does incur some performance penalty, so 10% is recommended for most services                                             | No                                |
 | untracked_spans_sample_rate | CODECOV_OTEL_UNTRACKED_SPANS_SAMPLE_RATE | 10                                           | Percentage of spans that are sampled without execution data. These spans incur a much smaller performance penalty, but do not provide as robust a data set to Codecov, resulting in some functionality being limited | No                                |
+| force_sync_requests         | CODECOV_OTEL_FORCE_SYNC_REQUESTS         | false                                        | Forces the HTTP client to make synchronous requests to the Codecov API, even if the underlying client supports asynchronous behavior. If the client does not support asynchronous requests, this setting is ignored. | No                                |
+
+### Codecov.yml Changes
+
+You will need to update your `codecov.yml` as follows:
+
+```
+comment:
+  layout: 'reach,diff,flags,tree,betaprofiling'
+  show_critical_paths: true
+
+```
+
+If you do not have a `codecov.yml` in your project, you can create the file in the root of your project and add the above configuration.
 
 ## Usage
 

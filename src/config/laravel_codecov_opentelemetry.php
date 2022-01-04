@@ -99,4 +99,18 @@ return [
     |
     */
     'untracked_spans_sample_rate' => env('CODECOV_OTEL_UNTRACKED_SPANS_SAMPLE_RATE', 10),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Untracked Synchronous Requests
+    |--------------------------------------------------------------------------
+    |
+    | Will force the library to make all HTTP requests using a synchronous client. Even if
+    | an asynchronous one is available.
+    |
+    | If an asynchronous client is not available, this setting is ignored, and all requests will
+    | be made synchronously.
+    */
+    'force_sync_requests' => env('CODECOV_OTEL_FORCE_SYNC_REQUESTS', false),
+
 ];

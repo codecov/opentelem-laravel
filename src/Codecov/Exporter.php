@@ -15,6 +15,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Client\RequestExceptionInterface;
 use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
 /**
@@ -132,15 +133,18 @@ class Exporter implements Trace\Exporter
             // It is expected version support will change as the codecov api changes
             // to accommodate the stateless approach required by this package.
 
-            $presignedURL = $this->getPresignedPut($this->authToken, $this->uploadsUrl, $version);
+            if ($this->client->isAsync()) {
+                $this->performAsyncUpload($this->authToken, $this->uploadsUrl, $convertedSpans, $version);
+            } else {
+                $presignedURL = $this->getPresignedPut($this->authToken, $this->uploadsUrl, $version);
 
-
-            $this->client->sendRequest(
-                'PUT',
-                $presignedURL,
-                ['content-type' => 'text/plain'],
-                ['spans' => $convertedSpans],
-            );
+                $this->client->sendRequest(
+                    'PUT',
+                    $presignedURL,
+                    ['content-type' => 'text/plain'],
+                    ['spans' => $convertedSpans],
+                );
+            }
         } catch (NoCodeException $e) {
             // We did not have a code. so we have to create one and try again.
             // Prevents an infinite recursion scenario that can happen if `profiling/versions` consistently
@@ -156,6 +160,53 @@ class Exporter implements Trace\Exporter
         }
 
         return Trace\Exporter::SUCCESS;
+    }
+
+    public function performAsyncUpload(string $authToken, string $uploadsUrl, array $spanData, ?string $externalId = null)
+    {
+        //get a presigned PUT
+
+        if (!$externalId) {
+            $externalId = 'default';
+        }
+
+        $promise = $this->client->sendRequest(
+            'POST',
+            $uploadsUrl,
+            [
+                'content-type' => 'application/json',
+                'Authorization' => 'repotoken '.$authToken,
+                'Accept' => 'application/json',
+            ],
+            [
+                'profiling' => $externalId,
+            ]
+        );
+
+        $promise->then(function (ResponseInterface $response) use ($externalId, $spanData) {
+            //send request using the presigned PUT.
+            $response = json_decode((string) $response->getBody());
+            $this->checkForNoCode($response, $externalId);
+            $presignedURL =  $response->raw_upload_location;
+
+            // This will also be async, but we do not care about the result.
+            // Fire and forget.
+            $this->client->sendRequest(
+                'PUT',
+                $presignedURL,
+                ['content-type' => 'text/plain'],
+                ['spans' => $spanData],
+            );
+        }, function (RequestExceptionInterface $e) use ($externalId) {
+            // here our attempt to get the presigned put failed.
+            $response = $e->getResponse();
+            $responseBody = json_decode((string) $response->getBody()->getContents());
+            $this->checkForNoCode($responseBody, $externalId);
+            return Trace\Exporter::FAILED_NOT_RETRYABLE;
+        });
+
+        //return the promise
+        return $promise;
     }
 
     public function setProfilerVersion(string $authToken, string $env, string $versionsUrl, ?string $version)
