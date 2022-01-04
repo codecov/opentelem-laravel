@@ -197,16 +197,12 @@ class Exporter implements Trace\Exporter
                 ['content-type' => 'text/plain'],
                 ['spans' => $spanData],
             );
-        }, function (NetworkExceptionInterface | ClientExceptionInterface | RequestExceptionInterface | Exception $e) use ($externalId) {
+        }, function (RequestExceptionInterface $e) use ($externalId) {
             // here our attempt to get the presigned put failed.
-            if (get_class($e) == 'RequestExceptionInterface') {
-                $response = $e->getResponse();
-                $responseBody = json_decode((string) $response->getBody()->getContents());
-                $this->checkForNoCode($responseBody, $externalId);
-                return Trace\Exporter::FAILED_NOT_RETRYABLE;
-            } else {
-                return Trace\Exporter::FAILED_RETRYABLE;
-            }
+            $response = $e->getResponse();
+            $responseBody = json_decode((string) $response->getBody()->getContents());
+            $this->checkForNoCode($responseBody, $externalId);
+            return Trace\Exporter::FAILED_NOT_RETRYABLE;
         });
 
         //return the promise
