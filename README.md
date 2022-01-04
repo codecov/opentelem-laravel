@@ -8,7 +8,7 @@ This library aims to make interfacing with Codecov's open telemetry based projec
 
 This package is not intended to be a general integration library for open telemetry, zipkin, etc. If you're looking for a more general opentelemetry integration package for Laravel, we currently recommended the package that inspired this one: https://github.com/SeanHood/laravel-opentelemetry
 
-## Requirements and Prequisites
+## Requirements and Pre-requisites
 
 1. A repository that is active on [Codecov](https://codecov.io)
 2. A profiling token obtainable from Codecov.
