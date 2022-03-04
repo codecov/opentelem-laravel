@@ -110,7 +110,10 @@ return [
     |
     | If an asynchronous client is not available, this setting is ignored, and all requests will
     | be made synchronously.
+    |
+    | Async functionality is experimental and not yet recommended for public use. Therefore 
+    | changing this setting is NOT recommended.
     */
-    'force_sync_requests' => env('CODECOV_OTEL_FORCE_SYNC_REQUESTS', false),
+    'force_sync_requests' => env('CODECOV_OTEL_FORCE_SYNC_REQUESTS', true),
 
 ];
