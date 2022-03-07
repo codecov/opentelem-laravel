@@ -84,6 +84,11 @@ class Trace
         $this->setSpanStatus($span, $response->status());
         $this->addConfiguredTags($span, $request, $response);
 
+        $uri = $request->route() ? $request->route()->uri() : null;
+        if($uri) {
+            $span->updateName($uri);
+        }
+
         $this->tracer->endActiveSpan();
 
         return $response;
