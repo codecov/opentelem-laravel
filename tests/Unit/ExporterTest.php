@@ -19,6 +19,26 @@ beforeEach(function () {
     config($config);
 });
 
+it('properly throws a NoCodeException', function () {
+    // $responseMock = Mockery::mock('Psr\Http\Message\ResponseInterface')->makePartial();
+    // $responseMock->shouldReceive('getBody')
+    //              ->andReturn((object) ['raw_upload_location' => 'my-location']);
+
+    $mockClient = Mockery::mock(ApiClient::class)->makePartial();
+    $mockClient->shouldReceive('sendRequest')
+        ->andThrow(new RequestException('{"profiling": ["Object with code=test-001 does not exist."]}', new GuzzleRequest('POST', 'test'), new GuzzleResponse(404, [], '{"profiling": ["Object with code=test-001 does not exist."]}')));
+
+    $exporter = new CodecovExporter(
+        config('laravel_codecov_opentelemetry.service_name'),
+        config('laravel_codecov_opentelemetry.codecov_host'),
+        config('laravel_codecov_opentelemetry.profiling_token'),
+        $mockClient
+    );
+
+    $exporter->getPresignedPut('abc123', 'https://profilingurl', '001');
+})->throws(NoCodeException::class);
+
+
 it('will throw an InvalidArgumentException on domains without scheme and host', function () {
     config(['laravel_codecov_opentelemetry.codecov_host' => 'my-invalid-url']);
 
@@ -165,25 +185,6 @@ it('can upload asynchronously', function () {
     $promise = $exporter->performAsyncUpload('abc123', 'https://profilingurl', ['a' => true], 'abc');
     $this->assertEquals($promise, $promiseMock);
 });
-
-it('properly throws a NoCodeException', function () {
-    $responseMock = Mockery::mock('Psr\Http\Message\ResponseInterface')->makePartial();
-    $responseMock->shouldReceive('getBody')
-                 ->andReturn((object) ['raw_upload_location' => 'my-location']);
-
-    $mockClient = Mockery::mock(ApiClient::class)->makePartial();
-    $mockClient->shouldReceive('sendRequest')
-        ->andThrow(new RequestException('{"profiling": ["Object with code=1 does not exist."]}', new GuzzleRequest('POST', 'test'), new GuzzleResponse(404, [], '{"profiling": ["Object with code=1 does not exist."]}')));
-
-    $exporter = new CodecovExporter(
-        config('laravel_codecov_opentelemetry.service_name'),
-        config('laravel_codecov_opentelemetry.codecov_host'),
-        config('laravel_codecov_opentelemetry.profiling_token'),
-        $mockClient
-    );
-
-    $exporter->getPresignedPut('abc123', 'https://profilingurl', '1');
-})->throws(NoCodeException::class);
 
 it('can export spans', function () {
     $converterMock = Mockery::mock(SpanCoverter::class)->makePartial();

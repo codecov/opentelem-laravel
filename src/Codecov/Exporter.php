@@ -254,6 +254,10 @@ class Exporter implements Trace\Exporter
         try {
             if (!$externalId) {
                 $externalId = 'default';
+            } else {
+                //code is id + env
+                $env = config('laravel_codecov_opentelemetry.execution_environment');
+                $externalId = $env ? $env . '-' . $externalId : $externalId;
             }
 
             $response = $this->client->sendRequest(
