@@ -1,21 +1,22 @@
 # laravel-codecov-opentelemetry
 
-_Note: This packaged is part of the [Runtime Insights Early Access Program](https://about.codecov.io/product/feature/runtime-insights/)._
 
 ## Purpose
 
-This library aims to make interfacing with Codecov's open telemetry based projects more straightforward for Laravel based applications. It is currently pre-alpha and not recommended for use.
+This library aims to make interfacing with Codecov's open telemetry based projects, primarily [Impact Analysis](https://docs.codecov.com/docs/impact-analysis) more straightforward for Laravel based applications. 
 
-This package is not intended to be a general integration library for open telemetry, zipkin, etc. If you're looking for a more general opentelemetry integration package for Laravel, we currently recommended the package that inspired this one: https://github.com/SeanHood/laravel-opentelemetry
+This package is not intended to be a general integration library for opentelemetry, zipkin, etc. If you're looking for a more general opentelemetry integration package for Laravel, we currently recommended the package that inspired this one: https://github.com/SeanHood/laravel-opentelemetry
 
 ## Requirements and Pre-requisites
 
 1. A repository that is active on [Codecov](https://codecov.io)
-2. A profiling token obtainable from Codecov.
+2. An Impact Analysis token obtainable from your repository's settings page in the Codecov UI.
 3. PHP version >=7.4
 4. pcov installed as a PHP extension (see _Installation_ below)
 
 ## Installation
+
+_Note: For a full implementation example, see [codecov/laravel-rti-example](https://github.com/codecov/laravel-rti-example)_
 
 ### Project Dependencies
 
