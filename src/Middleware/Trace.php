@@ -81,7 +81,14 @@ class Trace
             $span->setAttribute('codecov.coverage', $coverage);
         }
 
-        $this->setSpanStatus($span, $response->status());
+        // In the event we can't get a status, we just use code 520.
+        if(!method_exists($response, 'status') {
+            $status = '520';
+        } else {
+            $status = $response->status();
+        }
+           
+        $this->setSpanStatus($span, $status);
         $this->addConfiguredTags($span, $request, $response);
 
         $uri = $request->route() ? $request->route()->uri() : null;
