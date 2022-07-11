@@ -53,7 +53,8 @@ it('properly handles no status response', function(){
 it('properly handles a standard response', function(){
     //mock a binary response. 
     $response = Mockery::mock(Response::class)
-    ->shouldReceive('status');
+    ->shouldReceive('status')
+    ->andReturn('200');
 
     $request = Request::create('/example', 'GET');    
 
