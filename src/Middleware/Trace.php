@@ -81,8 +81,15 @@ class Trace
             $span->setAttribute('codecov.coverage', $coverage);
         }
 
-        $this->setSpanStatus($span, $response->status());
-        $this->addConfiguredTags($span, $request, $response);
+        //In the event we can't get a status, we just use code 520.
+        if(!method_exists($response, 'status')) {
+            $status = '520';
+        } else {
+            $status = $response->status();
+        }
+
+        $this->setSpanStatus($span, $status);
+        $this->addConfiguredTags($span, $request, $response, $status);
 
         $uri = $request->route() ? $request->route()->uri() : null;
         if($uri) {
@@ -105,9 +112,9 @@ class Trace
         }
     }
 
-    private function addConfiguredTags(Span $span, Request $request, $response)
+    private function addConfiguredTags(Span $span, Request $request, $response, $status)
     {
-        $span->setAttribute('http.status_code', $response->status() ?? 'not passed');
+        $span->setAttribute('http.status_code', $status ?? 'not passed');
         $span->setAttribute('http.method', $request->method()) ?? 'not passed';
         $span->setAttribute('http.host', $request->root() ?? 'not passed');
         $span->setAttribute('http.target', '/'.$request->path() ?? 'not passed');
