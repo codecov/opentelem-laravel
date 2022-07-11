@@ -89,7 +89,7 @@ class Trace
         }
 
         $this->setSpanStatus($span, $status);
-        $this->addConfiguredTags($span, $request, $response);
+        $this->addConfiguredTags($span, $request, $response, $status);
 
         $uri = $request->route() ? $request->route()->uri() : null;
         if($uri) {
@@ -112,9 +112,9 @@ class Trace
         }
     }
 
-    private function addConfiguredTags(Span $span, Request $request, $response)
+    private function addConfiguredTags(Span $span, Request $request, $response, $status)
     {
-        $span->setAttribute('http.status_code', $response->status() ?? 'not passed');
+        $span->setAttribute('http.status_code', $status ?? 'not passed');
         $span->setAttribute('http.method', $request->method()) ?? 'not passed';
         $span->setAttribute('http.host', $request->root() ?? 'not passed');
         $span->setAttribute('http.target', '/'.$request->path() ?? 'not passed');

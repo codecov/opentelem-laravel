@@ -1,16 +1,14 @@
 <?php
 
-use GuzzleHttp\Exception\RequestException;
-use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Client\NetworkExceptionInterface;
-use Psr\Http\Client\RequestExceptionInterface;
-
-use GuzzleHttp\Psr7\Request as GuzzleRequest;
-use GuzzleHttp\Psr7\Response as GuzzleResponse;
-use OpenTelemetry\Sdk\Trace;
 use Orchestra\Testbench\TestCase;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
+use Codecov\LaravelCodecovOpenTelemetry\Codecov\Exporter as CodecovExporter;
+use OpenTelemetry\Sdk\Trace\SpanProcessor\SimpleSpanProcessor;
+use OpenTelemetry\Sdk\Trace\TracerProvider;
+
 
 use Codecov\LaravelCodecovOpenTelemetry\Middleware\Trace as CodecovTrace;
 
@@ -28,7 +26,20 @@ it('properly handles no status response', function(){
 
     $request = Request::create('/example', 'GET');    
 
-    $traceMiddleware = new CodecovTrace;
+    $provider = new TracerProvider();
+
+    $exporter = new CodecovExporter(
+        config('laravel_codecov_opentelemetry.service_name'),
+        config('laravel_codecov_opentelemetry.codecov_host'),
+        config('laravel_codecov_opentelemetry.profiling_token')
+    );
+
+    $tracer = $provider
+            ->addSpanProcessor(new SimpleSpanProcessor($exporter))
+            ->getTracer('io.opentelemetry.contrib.php')
+        ;
+
+    $traceMiddleware = new CodecovTrace($tracer);
 
     $newResp = $traceMiddleware->handle($request, function() use($response) {
         return $response;
@@ -38,3 +49,35 @@ it('properly handles no status response', function(){
     expect($newResp)->toBe($response);
 
 });
+
+it('properly handles a standard response', function(){
+    //mock a binary response. 
+    $response = Mockery::mock(Response::class)
+    ->shouldReceive('status');
+
+    $request = Request::create('/example', 'GET');    
+
+    $provider = new TracerProvider();
+
+    $exporter = new CodecovExporter(
+        config('laravel_codecov_opentelemetry.service_name'),
+        config('laravel_codecov_opentelemetry.codecov_host'),
+        config('laravel_codecov_opentelemetry.profiling_token')
+    );
+
+    $tracer = $provider
+            ->addSpanProcessor(new SimpleSpanProcessor($exporter))
+            ->getTracer('io.opentelemetry.contrib.php')
+        ;
+
+    $traceMiddleware = new CodecovTrace($tracer);
+
+    $newResp = $traceMiddleware->handle($request, function() use($response) {
+        return $response;
+    });
+
+    //make sure we get our mocked response back and handle() hasn't blown up.
+    expect($newResp)->toBe($response);
+
+});
+
