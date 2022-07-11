@@ -82,7 +82,7 @@ class Trace
         }
 
         // In the event we can't get a status, we just use code 520.
-        if(!method_exists($response, 'status') {
+        if(!method_exists($response, 'status')) {
             $status = '520';
         } else {
             $status = $response->status();
