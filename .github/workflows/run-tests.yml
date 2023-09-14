@@ -16,7 +16,7 @@ jobs:
     name: P${{ matrix.php-versions }} - ${{ matrix.operating-system}}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install PHP versions
         uses: shivammathur/setup-php@v2
         with:
@@ -36,8 +36,9 @@ jobs:
       - name: Execute tests via PestPHP
         run: |
           vendor/bin/pest --coverage --coverage-cobertura coverage.xml
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_ORG_TOKEN }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           flags: PHP-v${{ matrix.php-versions }}_${{ matrix.operating-system}}
           files: ./coverage.xml
