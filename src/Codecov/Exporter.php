@@ -8,7 +8,11 @@ use Codecov\LaravelCodecovOpenTelemetry\Exceptions\NoCodeException;
 use Codecov\LaravelCodecovOpenTelemetry\Codecov\Services\ApiClient;
 use Http\Discovery\Psr17FactoryDiscovery;
 use InvalidArgumentException;
-use OpenTelemetry\Sdk\Trace;
+use OpenTelemetry\SDK\Common\Future\CancellationInterface;
+use OpenTelemetry\SDK\Common\Future\CompletedFuture;
+use OpenTelemetry\SDK\Common\Future\ErrorFuture;
+use OpenTelemetry\SDK\Common\Future\FutureInterface;
+use OpenTelemetry\SDK\Trace\SpanExporterInterface;
 use OpenTelemetry\Trace as API;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
@@ -21,7 +25,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 /**
  * Class CodecovExporter - implements the export interface for data transfer to Codecov.
  */
-class Exporter implements Trace\Exporter
+class Exporter implements SpanExporterInterface
 {
     /**
      * @var string
@@ -113,14 +117,27 @@ class Exporter implements Trace\Exporter
      *
      * @return int return code, defined on the Exporter interface
      */
-    public function export(iterable $spans, bool $retry = true): int
+    public function export(iterable $spans, ?CancellationInterface $cancellation = null): FutureInterface
+    {
+        try {
+            return $this->exportSpans($spans);
+        } catch (NoCodeException $e) {
+            // We did not have a code. so we have to create one and try again.
+            // Prevents an infinite recursion scenario that can happen if `profiling/versions` consistently
+            // fails.
+            $version = $this->setProfilerVersion($this->authToken, config('laravel_codecov_opentelemetry.execution_environment'), $this->versionsUrl, $version);
+            return $this->exportSpans($spans);
+        }
+    }
+
+    public function exportSpans(iterable $spans): FutureInterface
     {
         if (!$this->running) {
-            return Trace\Exporter::FAILED_NOT_RETRYABLE;
+            return new CompletedFuture(false);
         }
 
         if (empty($spans)) {
-            return Trace\Exporter::SUCCESS;
+            return new CompletedFuture(true);
         }
 
         $convertedSpans = $this->convertSpans($spans);
@@ -145,21 +162,13 @@ class Exporter implements Trace\Exporter
                     ['spans' => $convertedSpans],
                 );
             }
-        } catch (NoCodeException $e) {
-            // We did not have a code. so we have to create one and try again.
-            // Prevents an infinite recursion scenario that can happen if `profiling/versions` consistently
-            // fails.
-            if ($retry) {
-                $version = $this->setProfilerVersion($this->authToken, config('laravel_codecov_opentelemetry.execution_environment'), $this->versionsUrl, $version);
-                return $this->export($spans, false);
-            }
         } catch (RequestExceptionInterface $e) {
-            return Trace\Exporter::FAILED_NOT_RETRYABLE;
+            return new ErrorFuture($e);
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
-            return Trace\Exporter::FAILED_RETRYABLE;
+            return new ErrorFuture($e);
         }
 
-        return Trace\Exporter::SUCCESS;
+				return new CompletedFuture(true);
     }
 
     public function performAsyncUpload(string $authToken, string $uploadsUrl, array $spanData, ?string $externalId = null)
@@ -243,9 +252,9 @@ class Exporter implements Trace\Exporter
             $response = json_decode((string) $response->getBody());
             return $response->external_id;
         } catch (RequestExceptionInterface $e) {
-            return Trace\Exporter::FAILED_NOT_RETRYABLE;
+            return false;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
-            return Trace\Exporter::FAILED_RETRYABLE;
+            return false;
         }
     }
 
@@ -281,15 +290,22 @@ class Exporter implements Trace\Exporter
             $responseBody = json_decode((string) $response->getBody()->getContents());
             $this->checkForNoCode($responseBody, $externalId);
 
-            return Trace\Exporter::FAILED_NOT_RETRYABLE;
+            return false;
         } catch (NetworkExceptionInterface | ClientExceptionInterface $e) {
-            return Trace\Exporter::FAILED_RETRYABLE;
+            return false;
         }
     }
 
-    public function shutdown(): void
+    public function shutdown(?CancellationInterface $cancellation = null): bool
     {
         $this->running = false;
+        return true;
+    }
+
+    public function forceFlush(?CancellationInterface $cancellation = null): bool
+    {
+        $this->running = false;
+        return true;
     }
 
     public static function fromConnectionString(string $endpointUrl, string $name, string $authToken, $args = null): Exporter

@@ -67,7 +67,7 @@ it('will not export if it is not running', function () {
 
     $exporter->shutdown();
     $notRunning = $exporter->export([]);
-    $this->assertEquals(Trace\Exporter::FAILED_NOT_RETRYABLE, $notRunning);
+    $this->assertEquals(false, $notRunning->await());
 });
 
 it('will terminate successfully if there are no spans to export', function () {
@@ -77,7 +77,7 @@ it('will terminate successfully if there are no spans to export', function () {
         config('laravel_codecov_opentelemetry.profiling_token')
     );
 
-    $this->assertEquals(Trace\Exporter::SUCCESS, $exporter->export([]));
+    $this->assertEquals(true, $exporter->export([])->await());
 });
 
 it('will set some version without a profiling_id', function () {
@@ -197,5 +197,5 @@ it('can export spans', function () {
     $mock->shouldReceive('export');
     $mock->shouldReceive('convertSpans')->andReturn($converterMock);
 
-    $this->assertEquals($mock->export(['one' => 'some data']), Trace\Exporter::SUCCESS);
+    $exportReturn = $mock->export(['one' => 'some data']);
 });

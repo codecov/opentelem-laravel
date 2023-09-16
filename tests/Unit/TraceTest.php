@@ -6,8 +6,8 @@ use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 use Codecov\LaravelCodecovOpenTelemetry\Codecov\Exporter as CodecovExporter;
-use OpenTelemetry\Sdk\Trace\SpanProcessor\SimpleSpanProcessor;
-use OpenTelemetry\Sdk\Trace\TracerProvider;
+use OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
+use OpenTelemetry\SDK\Trace\TracerProvider;
 
 
 use Codecov\LaravelCodecovOpenTelemetry\Middleware\Trace as CodecovTrace;
@@ -21,10 +21,10 @@ beforeEach(function () {
 });
 
 it('properly handles no status response', function(){
-    //mock a binary response. 
+    //mock a binary response.
     $response = Mockery::mock(BinaryFileResponse::class);
 
-    $request = Request::create('/example', 'GET');    
+    $request = Request::create('/example', 'GET');
 
     $provider = new TracerProvider();
 
@@ -34,10 +34,10 @@ it('properly handles no status response', function(){
         config('laravel_codecov_opentelemetry.profiling_token')
     );
 
-    $tracer = $provider
+    $tracer = TracerProvider::builder()
             ->addSpanProcessor(new SimpleSpanProcessor($exporter))
-            ->getTracer('io.opentelemetry.contrib.php')
-        ;
+            ->build()
+            ->getTracer('io.opentelemetry.contrib.php');
 
     $traceMiddleware = new CodecovTrace($tracer);
 
@@ -51,12 +51,12 @@ it('properly handles no status response', function(){
 });
 
 it('properly handles a standard response', function(){
-    //mock a binary response. 
+    //mock a binary response.
     $response = Mockery::mock(Response::class)
     ->shouldReceive('status')
     ->andReturn('200');
 
-    $request = Request::create('/example', 'GET');    
+    $request = Request::create('/example', 'GET');
 
     $provider = new TracerProvider();
 
@@ -66,10 +66,10 @@ it('properly handles a standard response', function(){
         config('laravel_codecov_opentelemetry.profiling_token')
     );
 
-    $tracer = $provider
+    $tracer = TracerProvider::builder()
             ->addSpanProcessor(new SimpleSpanProcessor($exporter))
-            ->getTracer('io.opentelemetry.contrib.php')
-        ;
+            ->build()
+            ->getTracer('io.opentelemetry.contrib.php');
 
     $traceMiddleware = new CodecovTrace($tracer);
 

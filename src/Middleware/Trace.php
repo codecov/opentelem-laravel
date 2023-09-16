@@ -4,9 +4,10 @@ namespace Codecov\LaravelCodecovOpenTelemetry\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use OpenTelemetry\Trace\Span;
-use OpenTelemetry\Trace\SpanStatus;
-use OpenTelemetry\Trace\Tracer;
+use OpenTelemetry\API\Trace\StatusCode;
+use OpenTelemetry\SDK\Trace\Span;
+use OpenTelemetry\SDK\Trace\SpanStatus;
+use OpenTelemetry\SDK\Trace\Tracer;
 use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Driver\PcovDriver;
 use SebastianBergmann\CodeCoverage\Filter;
@@ -54,7 +55,9 @@ class Trace
             return $next($request);
         }
 
-        $span = $this->tracer->startAndActivateSpan('http_'.strtolower($request->method()));
+        $span = $this->tracer
+            ->spanBuilder('http_'.strtolower($request->method()))
+            ->startSpan();
 
         $coverage = null;
 
@@ -96,7 +99,7 @@ class Trace
             $span->updateName($uri);
         }
 
-        $this->tracer->endActiveSpan();
+        $span->end();
 
         return $response;
     }
@@ -104,11 +107,11 @@ class Trace
     private function setSpanStatus(Span $span, int $httpStatusCode)
     {
         if ($httpStatusCode >= 400 && $httpStatusCode < 600) {
-            $span->setSpanStatus(SpanStatus::ERROR, SpanStatus::DESCRIPTION[SpanStatus::ERROR]);
+            $span->setStatus(StatusCode::STATUS_ERROR, $httpStatusCode);
         }
 
         if ($httpStatusCode >= 200 && $httpStatusCode < 300) {
-            $span->setSpanStatus(SpanStatus::OK, SpanStatus::DESCRIPTION[SpanStatus::OK]);
+            $span->setStatus(StatusCode::OK, $httpStatusCode);
         }
     }
 
