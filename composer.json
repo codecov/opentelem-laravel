@@ -5,15 +5,22 @@
   "license": "MIT",
   "require": {
     "php": "^7.3|^8.0",
-    "open-telemetry/opentelemetry": "0.0.2",
-    "phpunit/php-code-coverage": "^9.2.8",
-    "psr/http-message": "^1.0",
-    "psr/http-client-implementation": "^1.0",
+    "ext-json": "*",
+    "open-telemetry/api": "1.0.0beta1",
+    "open-telemetry/context": "1.0.0beta1",
+    "open-telemetry/exporter-otlp": "1.0.0beta1",
+    "open-telemetry/exporter-zipkin": "1.0.0beta1"
+    "open-telemetry/gen-otlp-protobuf": "1.0.0beta1",
+    "open-telemetry/opentelemetry": "1.0.0beta1",
+    "open-telemetry/sdk": "1.0.0beta1",
+    "open-telemetry/sem-conv": "1.0.0beta1",
+    "php-http/client-common": "^2.5",
+    "php-http/discovery": "^1.0",
     "php-http/httplug": "^2.0",
     "php-http/message-factory": "^1.0",
-    "php-http/discovery": "^1.0",
-    "php-http/client-common": "^2.5",
-    "ext-json": "*"
+    "phpunit/php-code-coverage": "^9.2.8",
+    "psr/http-client-implementation": "^1.0",
+    "psr/http-message": "^1.0",
   },
   "autoload": {
     "psr-4": {
@@ -45,7 +52,8 @@
   },
   "config": {
     "allow-plugins": {
-      "pestphp/pest-plugin": true
+      "pestphp/pest-plugin": true,
+      "php-http/discovery": true
     }
   }
 }
