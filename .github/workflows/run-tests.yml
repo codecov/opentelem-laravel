@@ -36,7 +36,13 @@ jobs:
       - name: Execute tests via PestPHP
         run: |
           vendor/bin/pest --coverage --coverage-cobertura coverage.xml
+<<<<<<< Updated upstream
       - uses: codecov/codecov-action@v2
+=======
+      - uses: codecov/codecov-action@v4-beta-beta-beta-beta
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_ORG_TOKEN }}
+>>>>>>> Stashed changes
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: PHP-v${{ matrix.php-versions }}_${{ matrix.operating-system}}
