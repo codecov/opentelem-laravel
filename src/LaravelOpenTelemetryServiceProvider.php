@@ -34,11 +34,11 @@ class LaravelOpenTelemetryServiceProvider extends ServiceProvider
             'laravel_codecov_opentelemetry'
         );
 
-        $instance = $this->initOpenTelemetry();
+        $inst = $this->initOpenTelemetry();
 
-        if ($instance) {
-            $this->app->singleton(Tracer::class, function () use ($instance) {
-                return $instance;
+        if ($inst) {
+            $this->app->singleton(Tracer::class, function () use ($inst) {
+                return $inst;
             });
         }
     }
