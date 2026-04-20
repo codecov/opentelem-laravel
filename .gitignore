@@ -2,7 +2,6 @@
 *.txt
 coverage.xml
 .phpunit.result.cache
-composer.lock
 /tools/
 Makefile
 *.cache
