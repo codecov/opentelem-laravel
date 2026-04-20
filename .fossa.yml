@@ -7,5 +7,11 @@ project:
   id: github.com/codecov/opentelem-laravel
   url: https://github.com/codecov/opentelem-laravel
 
+# FOSSA v3 discovers Composer projects via composer.lock (see fossa-cli composer strategy docs).
+targets:
+  only:
+    - type: composer
+      path: "./"
+
 telemetry:
   scope: "off"
